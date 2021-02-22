@@ -12,14 +12,14 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     cap_add:
       - SYS_RAWIO
-    expose:
+    ports:
       - "8000"
     volumes:
       - "cnc-config:/config"
 
-  proxy:
-    build: ./proxy
-    depends_on:
-      - cncjs
-    ports:
-      - "80:80"
+  # proxy:
+  #   build: ./proxy
+  #   depends_on:
+  #     - cncjs
+  #   ports:
+  #     - "80:80"
