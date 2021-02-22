@@ -1,0 +1,42 @@
+#!/bin/bash
+set -ex
+
+THIRD_PARTY_DIR="$PROJECT_ROOT/3rdparty"
+
+function github_update() {
+    GH_USER=$1
+    REPO=$2
+    COMMIT_SHA=$3
+
+    # create a 3rd party dir
+    if [ ! -d $THIRD_PARTY_DIR ]; then
+        mkdir -p $THIRD_PARTY_DIR
+    fi
+
+    # create the actual dir of our repo
+    if [ ! -d $THIRD_PARTY_DIR/$REPO ]; then
+        mkdir -p $THIRD_PARTY_DIR/$REPO
+    fi
+
+    # make a backup before (potentially) destroying it
+    MS=$(date +%s%N | cut -b1-13)
+    if [ -d $THIRD_PARTY_DIR/$REPO ]; then
+        mv $THIRD_PARTY_DIR/$REPO $THIRD_PARTY_DIR/$REPO.$MS.bak
+    fi
+
+    # download new repo
+    rm -rf /tmp/$REPO-$COMMIT_SHA*
+    wget https://github.com/$GH_USER/$REPO/archive/$COMMIT_SHA.zip -O /tmp/$REPO-$COMMIT_SHA.zip
+    unzip /tmp/$REPO-$COMMIT_SHA.zip -d /tmp
+
+    # replace old with new
+    rm -rf $THIRD_PARTY_DIR/$REPO
+    mv /tmp/$REPO-$COMMIT_SHA $THIRD_PARTY_DIR/$REPO
+
+    # cleanup
+    if [ -d $THIRD_PARTY_DIR/$REPO.$MS.bak ]; then
+        rm -rf $THIRD_PARTY_DIR/$REPO.$MS.bak
+    fi
+}
+
+github_update balena-io-playground balena-cncjs 3ef8d4770fbc558ce3eee4bad3636b249e98f78c
