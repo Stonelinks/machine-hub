@@ -1,0 +1,25 @@
+version: "2"
+
+volumes:
+  cnc-config:
+
+services:
+  cncjs:
+    build: ./3rdparty/balena-cncjs/cncjs
+    # Add additional devices to this list if required.
+    devices:
+      - "/dev/ttyAMA0:/dev/ttyAMA0"
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    cap_add:
+      - SYS_RAWIO
+    expose:
+      - "8000"
+    volumes:
+      - "cnc-config:/config"
+
+  proxy:
+    build: ./proxy
+    depends_on:
+      - cncjs
+    ports:
+      - "80:80"
