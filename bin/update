@@ -40,3 +40,5 @@ function github_update() {
 }
 
 github_update balena-io-playground balena-cncjs 3ef8d4770fbc558ce3eee4bad3636b249e98f78c
+# github_update MatthewCroughan octobalena 13b5675668317ce758e67dde7b7a2ec01d7cd07d
+github_update Stonelinks timelapse 290f20e908643536a899acfb5a9d9d03f4cb159a

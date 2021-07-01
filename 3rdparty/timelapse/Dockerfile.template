@@ -1,0 +1,57 @@
+FROM balenalib/%%BALENA_MACHINE_NAME%%-ubuntu-node:12-bionic-build as build
+
+# This is pretty annoying... we need to compile libvips ourselves
+RUN apt-get update \
+  && apt-get install -y 
+
+# stuff we need to build our own libvips ... this is a pretty random selection
+# of dependencies, you'll want to adjust these
+RUN apt-get install -y --no-install-recommends \
+  wget \
+  glib-2.0-dev \
+  libexpat-dev \
+  librsvg2-dev \
+  libpng-dev \
+  libgif-dev \
+  libjpeg-dev \
+  libexif-dev \
+  liblcms2-dev \
+  liborc-dev 
+
+ARG VIPS_VERSION=8.9.2
+ARG VIPS_URL=https://github.com/libvips/libvips/releases/download
+
+WORKDIR /usr/local/src
+
+RUN wget ${VIPS_URL}/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz \
+  && tar xzf vips-${VIPS_VERSION}.tar.gz \
+  && cd vips-${VIPS_VERSION} \
+  && ./configure \
+  && make \
+  && make install
+
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /usr/src/app
+
+COPY . /usr/src/app/
+
+RUN install_packages jq
+RUN source .envrc && setup
+RUN source .envrc && PUBLIC_URL=/timelapse yarn build
+
+# FROM balenalib/%%BALENA_MACHINE_NAME%%-ubuntu-node:12-bionic-run
+
+# COPY --from=build /usr/src/app /usr/src/app
+# COPY --from=build /usr/lib /usr/lib
+# COPY --from=build /usr/local /usr/local
+
+# ENV UDEV=on
+
+# RUN install_packages jq
+
+# WORKDIR /usr/src/app
+
+# SHELL ["/bin/bash", "-c"]
+
+ENTRYPOINT source .envrc && yarn start-server

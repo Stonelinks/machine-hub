@@ -2,6 +2,7 @@ version: "2"
 
 volumes:
   cnc-config:
+  timelapse-config:
 
 services:
   cncjs:
@@ -17,9 +18,21 @@ services:
     volumes:
       - "cnc-config:/config"
 
-  # proxy:
-  #   build: ./proxy
-  #   depends_on:
-  #     - cncjs
-  #   ports:
-  #     - "80:80"
+  timelapse:
+    build: ./3rdparty/timelapse
+    privileged: true
+    volumes:
+      - "timelapse-config:/capture"
+    environment:
+      - SERVER_PORT=4000
+      - BASE_PATH=/capture
+      - PUBLIC_URL=/timelapse
+    expose:
+      - "4000"
+
+  proxy:
+    build: ./proxy
+    depends_on:
+      - timelapse
+    ports:
+      - "80:80"

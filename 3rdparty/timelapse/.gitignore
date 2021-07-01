@@ -1,0 +1,12 @@
+npm-packages-offline-cache
+node_modules
+secrets.sh
+.cache
+
+opt
+
+build
+
+config.json
+
+captures

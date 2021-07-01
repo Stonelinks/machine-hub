@@ -1,0 +1,35 @@
+#!/bin/bash
+set -ex
+
+if [ -z IS_DOCKER ]; then
+  install_packages libv4l-dev jq libatomic1 libudev-dev
+else
+  case $OS in
+  linux)
+    sudo apt-get update -y
+    sudo apt-get install -y --no-install-recommends libv4l-dev jq libatomic1 libudev-dev
+    ;;
+  esac
+fi
+
+echo "Checking if we have node $NODE_VERSION."
+if [ ! -f opt/node$NODE_VERSION/bin/node ]; then
+  NODE_DOWNLOAD_URL=https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-$OS-$ARCH.tar.gz
+  NODE_TMP_PATH=/tmp/node$NODE_VERSION.tar.gz
+  curl -fsSL "$NODE_DOWNLOAD_URL" -o $NODE_TMP_PATH
+  mkdir -p opt/node$NODE_VERSION
+  tar -C opt/node$NODE_VERSION -xzf $NODE_TMP_PATH --strip-components 1
+  rm $NODE_TMP_PATH
+fi
+
+echo "Checking if we have yarn $YARN_VERSION."
+if [ ! -f opt/node$YARN_VERSION/bin/yarn ]; then
+  YARN_DOWNLOAD_URL=https://github.com/yarnpkg/yarn/releases/download/v$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz
+  YARN_TMP_PATH=/tmp/yarn$YARN_VERSION.tar.gz
+  curl -fsSL "$YARN_DOWNLOAD_URL" -o $YARN_TMP_PATH
+  mkdir -p opt/yarn$YARN_VERSION
+  tar -C opt/yarn$YARN_VERSION -xzf $YARN_TMP_PATH --strip-components 1
+  rm $YARN_TMP_PATH
+fi
+
+yarn setup

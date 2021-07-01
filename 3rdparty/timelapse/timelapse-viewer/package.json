@@ -1,0 +1,49 @@
+{
+  "name": "timelapse-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@cycjimmy/jsmpeg-player": "^5.0.1",
+    "@types/lodash.throttle": "^4.1.6",
+    "@types/mousetrap": "^1.6.3",
+    "@types/node": "^12.0.0",
+    "@types/react": "^16.9.0",
+    "@types/react-dom": "^16.9.0",
+    "@types/react-redux": "^7.1.7",
+    "@types/react-time-picker": "^4.0.1",
+    "@types/react-toggle": "^4.0.2",
+    "immer": "^6.0.3",
+    "lodash.throttle": "^4.1.1",
+    "moment": "^2.24.0",
+    "mousetrap": "^1.6.5",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-location": "^2.0.7",
+    "react-redux": "^7.2.0",
+    "react-scripts": "3.4.0",
+    "react-time-picker": "^4.3.0",
+    "react-toggle": "^4.1.2",
+    "redux": "^4.0.5",
+    "redux-thunk": "^2.3.0",
+    "typescript": "~3.7.2"
+  },
+  "scripts": {
+    "dev-start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

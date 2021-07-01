@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+case $OS in
+darwin)
+	if ! command -v gsed > /dev/null ; then
+		echo "Use homebrew to install gnu-sed"
+		exit 1
+	fi
+	gsed "$@"
+;;
+linux)
+	sed "$@"
+esac
+
