@@ -5,6 +5,11 @@ volumes:
   timelapse-config:
 
 services:
+  frontend:
+    build: ./frontend
+    expose:
+      - "80"
+
   cncjs:
     build: ./3rdparty/balena-cncjs/cncjs
     # Add additional devices to this list if required.
@@ -31,7 +36,7 @@ services:
       - "4000"
 
   proxy:
-    build: ./proxy
+    build: ./haproxy
     depends_on:
       - timelapse
     ports:
