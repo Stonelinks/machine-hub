@@ -1,13 +1,17 @@
 import { Interval } from "luxon";
 import * as fetch from "node-fetch";
 import * as shell from "shelljs";
-import { CAPTURE_FOLDER, DEVICE_ID_NONE } from "../common/constants";
+import {
+  CAPTURE_FOLDER,
+  DEVICE_ID_NONE,
+  TIMELAPSE_CHUNK_SIZE,
+} from "../common/constants";
 import { MILLISECONDS_IN_MINUTE, MILLISECONDS_IN_SECOND } from "../common/time";
 import { slugifyDeviceId } from "../common/types";
 import {
   getLastUserDisconnectedMs,
   isStreamingVideo,
-} from "../routes/videoDevices";
+} from "../routes/streaming";
 import { deleteFile } from "../utils/files";
 import { cachedDownsize } from "../utils/images";
 import { getConfig, setConfigValue } from "./config";
@@ -200,27 +204,32 @@ interface MakeTimelapseVideoOpts {
   end: () => void;
 }
 
-export const makeTimelapseVideo = async ({
+interface MakeTimelapseVideoChunkOpts extends MakeTimelapseVideoOpts {
+  chunkIndex: number;
+  singleChunk: boolean;
+}
+
+export const makeTimelapseVideoChunk = async ({
+  chunkIndex,
+  singleChunk,
   nowMs,
   files,
   log,
   end,
   outPath,
   delayMs,
-}: MakeTimelapseVideoOpts) => {
+}: MakeTimelapseVideoChunkOpts) => {
+  const fileListPath = singleChunk
+    ? `/tmp/timelapse-out-${nowMs}.txt`
+    : `/tmp/timelapse-out-${nowMs}-chunk${chunkIndex}.txt`;
+
   const delaySeconds = `${parseInt(delayMs, 10) / MILLISECONDS_IN_SECOND}`;
-  const fileListPath = `/tmp/timelapse-out-${nowMs}.txt`;
   let ffmpegInstructions = "";
 
-  const downSizeAmount = files.length > 5000 ? 0.25 : 0.5;
-  log(
-    `about to resize ${files.length} images by ${(1 - downSizeAmount) *
-      100} percent...`,
-  );
   // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    const downsizePath = await cachedDownsize(file, downSizeAmount);
+    const downsizePath = await cachedDownsize(file, 0.5);
     log(`(${i + 1}/${files.length}) downsized ${file}`);
     ffmpegInstructions += `file '${downsizePath}'\n`;
     ffmpegInstructions += `duration ${delaySeconds}\n`;
@@ -235,7 +244,6 @@ export const makeTimelapseVideo = async ({
   getFfmpeg()
     .addInput(fileListPath)
     .inputOptions(["-f", "concat", "-safe", "0"])
-    // .videoCodec("libvpx-vp9")
     .videoCodec("libx264")
     .noAudio()
     .on("start", command => {
@@ -254,9 +262,142 @@ export const makeTimelapseVideo = async ({
     })
     .on("end", async () => {
       log("video created in: " + outPath);
-      log("done! you should be automatically redirected");
+      log("done!");
+      if (singleChunk) {
+        log("you should be automatically redirected");
+      }
       await deleteFile(fileListPath);
       end();
     })
     .save(outPath);
+};
+
+export const makeTimelapseVideo = async ({
+  nowMs,
+  files,
+  log,
+  end,
+  outPath,
+  delayMs,
+}: MakeTimelapseVideoOpts) => {
+  try {
+    if (files.length < TIMELAPSE_CHUNK_SIZE) {
+      log("processing a single chunk");
+      await makeTimelapseVideoChunk({
+        singleChunk: true,
+        chunkIndex: 0,
+        nowMs,
+        files,
+        log,
+        end,
+        outPath,
+        delayMs,
+      });
+    } else {
+      log("generating chunks...");
+      const baseOutPath = outPath
+        .split(".")
+        .slice(0, -1)
+        .join(".");
+      const chunkInputFiles = [[]];
+      const chunkOutputFiles = [];
+      let chunkIndex = 0;
+
+      const addChunkOutputFile = () => {
+        chunkOutputFiles.push(`${baseOutPath}.chunk${chunkIndex}.mp4`);
+      };
+      addChunkOutputFile();
+
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        if (chunkInputFiles[chunkIndex].length >= TIMELAPSE_CHUNK_SIZE) {
+          chunkIndex++;
+          addChunkOutputFile();
+          log(`creating empty chunk ${chunkIndex}`);
+          chunkInputFiles[chunkIndex] = [];
+        }
+
+        chunkInputFiles[chunkIndex].push(file);
+      }
+
+      let chunkConcatFfmpegInstructions = "";
+      const delaySeconds = `${parseInt(delayMs, 10) / MILLISECONDS_IN_SECOND}`;
+      log(`have ${chunkInputFiles.length} chunks to process`);
+
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < chunkInputFiles.length; i++) {
+        const chunkInputs = chunkInputFiles[i];
+        const chunkOutputPath = chunkOutputFiles[i];
+        log(`begin chunk ${i}`);
+
+        const buildChunkPromise = new Promise<void>(async (res, rej) => {
+          await makeTimelapseVideoChunk({
+            singleChunk: false,
+            chunkIndex: i,
+            nowMs,
+            files: chunkInputs,
+            log,
+            end: res,
+            outPath: chunkOutputPath,
+            delayMs,
+          });
+        });
+
+        await buildChunkPromise;
+        log(`end chunk ${i}`);
+
+        chunkConcatFfmpegInstructions += `file '${chunkOutputPath}'\n`;
+        chunkConcatFfmpegInstructions += `duration ${parseInt(
+          delaySeconds,
+          10,
+        ) * chunkInputs.length}\n`;
+      }
+
+      log(`done all chunks, final concat`);
+
+      const chunkConcatListPath = `/tmp/timelapse-out-${nowMs}.txt`;
+
+      await writeFileAsync(chunkConcatListPath, chunkConcatFfmpegInstructions);
+      log(`made a list of chunks to ${chunkConcatListPath}`);
+
+      getFfmpeg()
+        .addInput(chunkConcatListPath)
+        .inputOptions(["-f", "concat", "-safe", "0"])
+        .videoCodec("libx264")
+        .noAudio()
+        .on("start", command => {
+          log(`ffmpeg process started: ${command}`);
+        })
+        .on("progress", progress => {
+          log(`processing: ${progress.percent}% done`);
+        })
+        .on("error", (err, stdout, stderr) => {
+          log(`Error: ${err}`);
+          log(`ffmpeg stderr: ${stderr}`);
+
+          setTimeout(() => {
+            end();
+          }, MILLISECONDS_IN_MINUTE / 2);
+        })
+        .on("end", async () => {
+          log(`video created in: ${outPath}`);
+          log("done! you should be automatically redirected");
+          await deleteFile(chunkConcatListPath);
+
+          // tslint:disable-next-line:prefer-for-of
+          for (let i = 0; i < chunkOutputFiles.length; i++) {
+            const chunkOutputPath = chunkOutputFiles[i];
+            await deleteFile(chunkOutputPath);
+          }
+
+          end();
+        })
+        .save(outPath);
+    }
+  } catch (e) {
+    log(`problem making timelapse!`);
+    log(e.stack);
+  }
 };

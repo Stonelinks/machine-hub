@@ -40,3 +40,11 @@ export interface Config extends JsonObject {
   // zoomStepEnd: number;
   // zoomStepDirection: "in" | "out";
 }
+
+export enum WebSocketVideoMessageTypes {
+  heartbeat = "heartbeat",
+  play = "play",
+  pause = "pause",
+  stop = "stop",
+  load = "load",
+}

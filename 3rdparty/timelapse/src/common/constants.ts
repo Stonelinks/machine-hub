@@ -1,4 +1,5 @@
 import * as path from "path";
+import { DAYS_IN_WEEK } from "./time";
 
 const prefixPath = (s: string) =>
   process.env.BASE_PATH
@@ -6,6 +7,8 @@ const prefixPath = (s: string) =>
     : path.resolve(s);
 
 export const CACHE_FOLDER = prefixPath(".cache");
+export const CACHE_MAX_AGE_DAYS = DAYS_IN_WEEK;
+
 export const CAPTURE_FOLDER = prefixPath("captures");
 export const THUMBS_FOLDER_NAME = ".thumbs";
 export const VIEWER_FOLDER = path.resolve("./timelapse-viewer/build");
@@ -17,3 +20,5 @@ export const VIDEO_STREAM_WIDTH = 640;
 export const VIDEO_STREAM_HEIGHT = 480;
 
 export const DEVICE_ID_NONE = "Null device ID";
+
+export const TIMELAPSE_CHUNK_SIZE = 200;

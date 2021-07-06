@@ -76,6 +76,16 @@ const CaptureFileList = ({
               <a target="_blank" href={`${HTTP_BASE_URL}/${f}`}>
                 Download
               </a>
+              {"\n"}
+              <a
+                href="#"
+                onClick={async () => {
+                  await window.fetch(`${HTTP_BASE_URL}/delete/${encode(f)}`);
+                  onGetCaptureFiles(captureId);
+                }}
+              >
+                Delete
+              </a>
             </pre>
           </div>
         </div>

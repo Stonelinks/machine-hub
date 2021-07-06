@@ -1,5 +1,6 @@
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
+import { encode } from "../common/encode";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
 import { HTTP_BASE_URL } from "../utils/api";
@@ -84,6 +85,16 @@ const ResultsFileList = ({
             >
               <a target="_blank" href={`${HTTP_BASE_URL}/${f}`}>
                 Download
+              </a>
+              {"\n"}
+              <a
+                href="#"
+                onClick={async () => {
+                  await window.fetch(`${HTTP_BASE_URL}/delete/${encode(f)}`);
+                  onGetCaptureFiles(captureId);
+                }}
+              >
+                Delete
               </a>
             </pre>
           </div>

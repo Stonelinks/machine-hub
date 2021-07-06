@@ -1,10 +1,11 @@
 import * as fs from "fs";
+import * as path from "path";
 import { promisify } from "util";
 import { JsonSerializable } from "../common/json";
 
-export const readFileAsync = async (path: string): Promise<string> => {
+export const readFileAsync = async (filePath: string): Promise<string> => {
   return new Promise(resolve => {
-    fs.readFile(path, "utf8", (err, contents) => {
+    fs.readFile(filePath, "utf8", (err, contents) => {
       resolve(contents);
     });
   });
@@ -12,24 +13,24 @@ export const readFileAsync = async (path: string): Promise<string> => {
 
 const _writeFileAsync = promisify(fs.writeFile);
 export const writeFileAsync = async (
-  path: string,
+  filePath: string,
   contents: string | Buffer,
 ): Promise<boolean> => {
   const c = typeof contents === "string" ? contents.trim() + "\n" : contents;
-  await _writeFileAsync(path, c);
+  await _writeFileAsync(filePath, c);
   return true;
 };
 
-export const readJsonAsync = async (path: string) => {
-  const contents = await readFileAsync(path);
+export const readJsonAsync = async (filePath: string) => {
+  const contents = await readFileAsync(filePath);
   return JSON.parse(contents);
 };
 
 export const writeJsonAsync = async (
-  path: string,
+  filePath: string,
   contents: JsonSerializable,
 ) => {
-  await writeFileAsync(path, JSON.stringify(contents, null, 2));
+  await writeFileAsync(filePath, JSON.stringify(contents, null, 2));
 };
 
 export const listDirectory = promisify(fs.readdir);
@@ -39,16 +40,16 @@ export const stat = promisify(fs.stat);
 export const deleteFile = promisify(fs.unlink);
 
 export const getChronologicalFileList = async (
-  path: string,
+  dirPath: string,
 ): Promise<string[]> => {
-  const files = await listDirectory(`${path}`);
+  const files = await listDirectory(dirPath);
 
   const stats = [];
 
   // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    const s = await stat(`${path}/${file}`);
+    const s = await stat(`${dirPath}/${file}`);
     if (s.isFile()) {
       stats.push({
         name: file,
@@ -63,4 +64,18 @@ export const getChronologicalFileList = async (
   });
 
   return stats.map(s => s.name);
+};
+
+export const recursivelyListDir = async (dirPath: string) => {
+  async function* walk(dir) {
+    for await (const d of await fs.promises.opendir(dir)) {
+      const entry = path.join(dir, d.name);
+      if (d.isDirectory()) yield* walk(entry);
+      else if (d.isFile()) yield entry;
+    }
+  }
+
+  const r = [];
+  for await (const p of walk(dirPath)) r.push(p);
+  return r;
 };

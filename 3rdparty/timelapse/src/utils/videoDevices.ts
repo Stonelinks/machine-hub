@@ -123,6 +123,7 @@ export const setCameraDeviceZoom = (deviceId: DeviceId, zoom: number) => {
 };
 
 export const start = async (deviceId: DeviceId): Promise<void> => {
+  console.log(`start ${deviceId}`);
   const { cam, isOn, initState } = getOrCreateCameraDevice(deviceId);
   if (isOn) {
     return Promise.resolve();
@@ -196,6 +197,7 @@ export const start = async (deviceId: DeviceId): Promise<void> => {
 };
 
 export const stop = (deviceId: DeviceId) => {
+  console.log(`stop ${deviceId}`);
   const { isOn } = getOrCreateCameraDevice(deviceId);
   if (isOn) {
     cameraDevices[deviceId].isOn = false;

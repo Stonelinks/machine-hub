@@ -6,7 +6,7 @@ import { DeviceId } from "../common/types";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
 import { WS_BASE_URL } from "../utils/api";
-import { JsmpegPlayer } from "./JsmpegPlayer";
+import { FfmpegVideoStreamPlayer } from "./FfmpegVideoStreamPlayer";
 import VideoDeviceControl from "./VideoDeviceControl";
 
 const mapState = (state: RootState) => ({
@@ -46,7 +46,7 @@ const VideoDeviceViewer = ({
               <div key={deviceId + index}>
                 <h3>{deviceId}</h3>
                 {/* <img
-                  src={`${HTTP_BASE_URL}/video-device/${encode(
+                  src={`${HTTP_BASE_URL}/stream/${encode(
                     deviceId,
                   )}/stream.mjpg`}
                   // src={`${BASE_URL}/video-device/${encode(
@@ -59,11 +59,10 @@ const VideoDeviceViewer = ({
                     maxWidth: "100%",
                   }}
                 /> */}
-                <JsmpegPlayer
-                  videoUrl={`${WS_BASE_URL}/video-device/${encode(
+                <FfmpegVideoStreamPlayer
+                  videoUrl={`${WS_BASE_URL}/stream/${encode(
                     deviceId,
-                  )}/stream.ws`}
-                  options={{ audio: false }}
+                  )}/ffmpeg.ws`}
                 />
               </div>
             );
