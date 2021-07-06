@@ -2,6 +2,7 @@ import _ from "lodash";
 import React from "react";
 import { VIDEO_STREAM_HEIGHT, VIDEO_STREAM_WIDTH } from "../common/constants";
 import { MILLISECONDS_IN_SECOND } from "../common/time";
+import { WebSocketVideoMessageTypes } from "../common/types";
 
 // tslint:disable-next-line:no-var-requires
 const JSMpeg = require("@cycjimmy/jsmpeg-player");
@@ -11,7 +12,6 @@ interface Props {
 }
 
 export class FfmpegVideoStreamPlayer extends React.Component<Props> {
-  heartBeatInterval?: NodeJS.Timeout;
   constructor(props: Props) {
     super(props);
 
@@ -36,34 +36,24 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
       this.props.videoUrl,
       {
         audio: false,
-        // hooks: {
-        //   play: () => {
-        //     const socket = this.getSocket();
-        //     this.heartBeatInterval = setInterval(() => {
-        //       socket.send(WebSocketVideoMessageTypes.heartbeat);
-        //     }, 30 * MILLISECONDS_IN_SECOND);
-        //     socket.send(WebSocketVideoMessageTypes.play);
-        //   },
-        //   pause: () => {
-        //     this.getSocket().send(WebSocketVideoMessageTypes.pause)
-        //   },
-        //   stop: () => {
-        //     this.getSocket().send(WebSocketVideoMessageTypes.stop)
-        //   },
-        //   load: () => {
-        //     this.getSocket().send(WebSocketVideoMessageTypes.load)
-        //   },
-        // },
+        hooks: {
+          play: () => {
+            console.log("FfmpegVideoStreamPlayer: play hook");
+            this.getSocket().send(WebSocketVideoMessageTypes.play);
+          },
+          pause: () => {
+            console.log("FfmpegVideoStreamPlayer: pause hook");
+            this.getSocket().send(WebSocketVideoMessageTypes.pause);
+          },
+          stop: () => {
+            console.log("FfmpegVideoStreamPlayer: stop hook");
+            this.getSocket().send(WebSocketVideoMessageTypes.stop);
+          },
+        },
       },
       {},
     );
   }, MILLISECONDS_IN_SECOND);
-
-  componentWillUnmount() {
-    if (this.heartBeatInterval) {
-      clearTimeout(this.heartBeatInterval);
-    }
-  }
 
   play() {
     console.log(`FfmpegVideoStreamPlayer play`);

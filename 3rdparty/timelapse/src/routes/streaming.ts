@@ -4,7 +4,7 @@ import { FfmpegCommand } from "fluent-ffmpeg";
 import { Readable, Writable } from "stream";
 import { VIDEO_STREAM_HEIGHT, VIDEO_STREAM_WIDTH } from "../common/constants";
 import { decode } from "../common/encode";
-import { DeviceId } from "../common/types";
+import { DeviceId, WebSocketVideoMessageTypes } from "../common/types";
 import { now } from "../utils/cron";
 import { getFfmpeg } from "../utils/ffmpeg";
 import { getOrCreateCameraDevice, start } from "../utils/videoDevices";
@@ -231,7 +231,12 @@ export const streamingRoutes = async (app: Application) => {
     if (!ffmpegHandle) {
       await startFfmpegStreamer(deviceId);
     }
-    const listener = data => ws.send(data);
+    let isPlaying = true;
+    const listener = data => {
+      if (isPlaying) {
+        ws.send(data);
+      }
+    };
     getOrCreateFfmpegFrameEmitter(deviceId).on("data", listener);
     ws.on("close", () => {
       console.log(`ws close ${deviceId}`);
@@ -244,22 +249,19 @@ export const streamingRoutes = async (app: Application) => {
       getOrCreateFfmpegFrameEmitter(deviceId).removeListener("data", listener);
     });
 
-    // ws.on("message", m => {
-    //   console.log(`received ${deviceId} ${m}`);
-    //   switch (m as WebSocketVideoMessageTypes) {
-    //     case WebSocketVideoMessageTypes.heartbeat:
-    //       break;
-    //     case WebSocketVideoMessageTypes.play:
-    //       break;
-    //     case WebSocketVideoMessageTypes.pause:
-    //       break;
-    //     case WebSocketVideoMessageTypes.stop:
-    //       break;
-    //     case WebSocketVideoMessageTypes.load:
-    //       break;
-    //     default:
-    //       break;
-    //   }
-    // });
+    ws.on("message", m => {
+      console.log(`received ${deviceId} ${m}`);
+      switch (m as WebSocketVideoMessageTypes) {
+        case WebSocketVideoMessageTypes.play:
+          isPlaying = true;
+          break;
+        case WebSocketVideoMessageTypes.pause:
+        case WebSocketVideoMessageTypes.stop:
+          isPlaying = false;
+          break;
+        default:
+          break;
+      }
+    });
   });
 };
