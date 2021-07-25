@@ -49,4 +49,73 @@ export enum WebSocketVideoMessageTypes {
   pause = "pause",
   stop = "stop",
   load = "load",
+  zoomControl = "zoomControl",
+  speedControlStart = "speedControlStart",
+  speedControlStop = "speedControlStop",
 }
+
+export interface ZoomControlPayload {
+  deviceId: DeviceId;
+  direction: "in" | "out";
+}
+
+export interface SpeedControlStartPayload {
+  deviceId: DeviceId;
+  axis: "pan" | "tilt";
+  direction: "up" | "down" | "left" | "right";
+}
+
+export interface SpeedControlStopPayload {
+  deviceId: DeviceId;
+  axis: "pan" | "tilt";
+}
+
+type AllPayloads =
+  | ZoomControlPayload
+  | SpeedControlStartPayload
+  | SpeedControlStopPayload;
+
+export interface WebSocketMsg {
+  type: WebSocketVideoMessageTypes;
+  msg?: AllPayloads;
+}
+
+export interface HeartbeatWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.heartbeat;
+}
+export interface PlayWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.play;
+}
+export interface PauseWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.pause;
+}
+export interface StopWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.stop;
+}
+export interface LoadWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.load;
+}
+
+export interface ZoomControlWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.zoomControl;
+  msg: ZoomControlPayload;
+}
+
+export interface SpeedControlStartWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.speedControlStart;
+  msg: SpeedControlStartPayload;
+}
+export interface SpeedControlStopWebsocketMsg extends WebSocketMsg {
+  type: WebSocketVideoMessageTypes.speedControlStop;
+  msg: SpeedControlStopPayload;
+}
+
+export type AllWebsocketMsgs =
+  | HeartbeatWebsocketMsg
+  | PlayWebsocketMsg
+  | PauseWebsocketMsg
+  | StopWebsocketMsg
+  | LoadWebsocketMsg
+  | ZoomControlWebsocketMsg
+  | SpeedControlStartWebsocketMsg
+  | SpeedControlStopWebsocketMsg;

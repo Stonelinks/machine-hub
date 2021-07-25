@@ -16,7 +16,6 @@ export interface APIStoreState {
   devices: APIRequest;
   getDeviceFormats: APIRequest;
   getDeviceControls: APIRequest;
-  setDevicePositionControl: APIRequest;
   setDeviceSpeedControlStart: APIRequest;
   setDeviceSpeedControlStop: APIRequest;
   setDeviceZoomControl: APIRequest;

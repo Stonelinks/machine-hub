@@ -1,13 +1,10 @@
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { DEVICE_ID_NONE } from "../common/constants";
-import { encode } from "../common/encode";
 import { DeviceId } from "../common/types";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
-import { WS_BASE_URL } from "../utils/api";
 import { FfmpegVideoStreamPlayer } from "./FfmpegVideoStreamPlayer";
-import VideoDeviceControl from "./VideoDeviceControl";
 
 const mapState = (state: RootState) => ({
   captureDevices: state.api.getConfig?.value?.captureDevices,
@@ -60,15 +57,13 @@ const VideoDeviceViewer = ({
                   }}
                 /> */}
                 <FfmpegVideoStreamPlayer
-                  videoUrl={`${WS_BASE_URL}/stream/${encode(
-                    deviceId,
-                  )}/ffmpeg.ws`}
+                  deviceId={deviceId}
+                  enableControls={deviceId === controlsDevice}
                 />
               </div>
             );
           })
         : null}
-      {controlsDevice ? <VideoDeviceControl deviceId={controlsDevice} /> : null}
     </div>
   );
 };

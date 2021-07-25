@@ -5,6 +5,7 @@ import {
   getControl,
   getOrCreateCameraDevice,
   getZoomInfo,
+  getZoomRelativeControl,
   listVideoDevices,
   moveAxisRelative,
   moveAxisSpeedStart,
@@ -56,28 +57,11 @@ export const registerVideoDeviceRoutes = async (app: Application) => {
     "/video-device/:deviceId/control/zoom/:direction",
     async (req, res) => {
       const deviceId = decode(req.params.deviceId);
-      const direction = decode(req.params.direction);
+      const direction = decode(req.params.direction) as "in" | "out";
 
       const { cam, zoom } = getOrCreateCameraDevice(deviceId);
-      const zoomAbsControl = getControl(cam, `zoom absolute`);
-      if (zoomAbsControl) {
-        const { min, max } = getZoomInfo(cam);
-        const zoomDelta = (direction === "in" ? 1 : -1) * 10;
-
-        let newZoom = zoom + zoomDelta;
-
-        if (zoom < min) {
-          newZoom = min;
-        } else if (zoom > max) {
-          newZoom = max;
-        }
-
-        setCameraDeviceZoom(deviceId, newZoom);
-
-        console.log("zoom", direction, newZoom, "delta", zoomDelta);
-
-        cam.controlSet(zoomAbsControl.id, newZoom);
-      }
+      const zoomRelControl = getZoomRelativeControl(cam);
+      zoomRelControl(zoom, direction);
 
       res.send(true);
     },

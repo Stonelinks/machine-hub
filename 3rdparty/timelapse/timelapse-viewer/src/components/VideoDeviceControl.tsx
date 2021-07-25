@@ -14,7 +14,11 @@ import {
   FaPlus,
   FaMinus,
 } from "react-icons/fa";
-import { DeviceId } from "../common/types";
+import {
+  AllWebsocketMsgs,
+  DeviceId,
+  WebSocketVideoMessageTypes,
+} from "../common/types";
 
 const mapState = (state: RootState) => ({
   getDeviceFormats: state.api.getDeviceFormats.value,
@@ -26,11 +30,6 @@ const mapDispatch = {
     apiCall("getDeviceFormats", { deviceId }),
   onGetDeviceControls: (deviceId: DeviceId) =>
     apiCall("getDeviceControls", { deviceId }),
-  onSetDevicePositionControl: (
-    deviceId: DeviceId,
-    axis: "pan" | "tilt",
-    direction: "up" | "down" | "left" | "right",
-  ) => apiCall("setDevicePositionControl", { deviceId, axis, direction }),
   onSetDeviceZoomControl: (deviceId: DeviceId, direction: "in" | "out") =>
     apiCall("setDeviceZoomControl", { deviceId, direction }),
   onSetDeviceSpeedControlStart: (
@@ -48,6 +47,7 @@ type PropsFromRedux = ConnectedProps<typeof connector>;
 
 interface OwnProps {
   deviceId: DeviceId;
+  sendMessage: (m: AllWebsocketMsgs) => void;
 }
 
 type Props = PropsFromRedux & OwnProps;
@@ -109,9 +109,12 @@ class VideoDeviceControl extends React.Component<Props, State> {
     return (e: KeyOrMouseEvent) => {
       e.preventDefault();
       if (!this.state[direction]) {
-        const { onSetDeviceSpeedControlStart, deviceId } = this.props;
+        const { sendMessage, deviceId } = this.props;
         console.log("start", axis, direction);
-        onSetDeviceSpeedControlStart(deviceId, axis, direction);
+        sendMessage({
+          type: WebSocketVideoMessageTypes.speedControlStart,
+          msg: { deviceId, axis, direction },
+        });
         (this.setState as any)({ [direction]: true });
       }
     };
@@ -123,17 +126,23 @@ class VideoDeviceControl extends React.Component<Props, State> {
   ) => {
     return (e: KeyOrMouseEvent) => {
       e.preventDefault();
-      const { onSetDeviceSpeedControlStop, deviceId } = this.props;
+      const { sendMessage, deviceId } = this.props;
       console.log("stop", axis);
-      onSetDeviceSpeedControlStop(deviceId, axis);
+      sendMessage({
+        type: WebSocketVideoMessageTypes.speedControlStop,
+        msg: { deviceId, axis },
+      });
       (this.setState as any)({ [direction]: false });
     };
   };
 
   makeZoomHandler = (direction: "in" | "out") => {
     return throttle(() => {
-      const { onSetDeviceZoomControl, deviceId } = this.props;
-      onSetDeviceZoomControl(deviceId, direction);
+      const { sendMessage, deviceId } = this.props;
+      sendMessage({
+        type: WebSocketVideoMessageTypes.zoomControl,
+        msg: { deviceId, direction },
+      });
       (this.setState as any)({ [direction]: true });
       setTimeout(() => {
         (this.setState as any)({ [direction]: false });

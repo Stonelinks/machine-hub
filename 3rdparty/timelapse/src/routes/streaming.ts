@@ -4,10 +4,22 @@ import { FfmpegCommand } from "fluent-ffmpeg";
 import { Readable, Writable } from "stream";
 import { VIDEO_STREAM_HEIGHT, VIDEO_STREAM_WIDTH } from "../common/constants";
 import { decode } from "../common/encode";
-import { DeviceId, WebSocketVideoMessageTypes } from "../common/types";
+import {
+  DeviceId,
+  SpeedControlStartPayload,
+  SpeedControlStopPayload,
+  WebSocketVideoMessageTypes,
+  ZoomControlPayload,
+} from "../common/types";
 import { now } from "../utils/cron";
 import { getFfmpeg } from "../utils/ffmpeg";
-import { getOrCreateCameraDevice, start } from "../utils/videoDevices";
+import {
+  getOrCreateCameraDevice,
+  getZoomRelativeControl,
+  moveAxisSpeedStart,
+  moveAxisSpeedStop,
+  start,
+} from "../utils/videoDevices";
 
 enum VideoStreamTypes {
   ffmpeg = "ffmpeg",
@@ -250,17 +262,35 @@ export const streamingRoutes = async (app: Application) => {
     });
 
     ws.on("message", m => {
-      console.log(`received ${deviceId} ${m}`);
-      switch (m as WebSocketVideoMessageTypes) {
-        case WebSocketVideoMessageTypes.play:
-          isPlaying = true;
-          break;
-        case WebSocketVideoMessageTypes.pause:
-        case WebSocketVideoMessageTypes.stop:
-          isPlaying = false;
-          break;
-        default:
-          break;
+      console.log(`received ${m}`);
+
+      try {
+        const p = JSON.parse(m as string);
+        const { cam, zoom } = getOrCreateCameraDevice(deviceId);
+        switch (p.type as WebSocketVideoMessageTypes) {
+          case WebSocketVideoMessageTypes.play:
+            isPlaying = true;
+            break;
+          case WebSocketVideoMessageTypes.pause:
+          case WebSocketVideoMessageTypes.stop:
+            isPlaying = false;
+            break;
+          case WebSocketVideoMessageTypes.zoomControl:
+            const zoomRelControl = getZoomRelativeControl(cam);
+            zoomRelControl(zoom, p.msg.direction);
+            break;
+          case WebSocketVideoMessageTypes.speedControlStart:
+            moveAxisSpeedStart(cam, p.msg.axis, p.msg.direction);
+            break;
+          case WebSocketVideoMessageTypes.speedControlStop:
+            moveAxisSpeedStop(cam, p.msg.axis);
+            break;
+          default:
+            break;
+        }
+      } catch (e) {
+        console.error("received message that isn't JSON?");
+        console.error(e.stack);
       }
     });
   });

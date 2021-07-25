@@ -99,6 +99,7 @@ interface CameraDeviceState {
 }
 
 const cameraDevices: Record<string, CameraDeviceState> = {};
+
 export const getOrCreateCameraDevice = (
   deviceId: DeviceId,
 ): CameraDeviceState => {
@@ -119,6 +120,7 @@ export const getOrCreateCameraDevice = (
 };
 
 export const setCameraDeviceZoom = (deviceId: DeviceId, zoom: number) => {
+  console.log(`setCameraDeviceZoom, deviceId=${deviceId} zoom=${zoom}`);
   cameraDevices[deviceId].zoom = zoom;
 };
 
@@ -315,6 +317,33 @@ export const getZoomInfo = (cam: Cam) => {
       };
 };
 
+export const getZoomRelativeControl = (cam: Cam) => {
+  const zoomAbsControl = getControl(cam, `zoom absolute`);
+
+  return zoomAbsControl
+    ? (zoom: number, direction: "in" | "out") => {
+        const { min, max } = getZoomInfo(cam);
+        const zoomDelta = (direction === "in" ? 1 : -1) * 10;
+
+        let newZoom = zoom + zoomDelta;
+
+        if (zoom < min) {
+          newZoom = min;
+        } else if (zoom > max) {
+          newZoom = max;
+        }
+
+        setCameraDeviceZoom(cam.device, newZoom);
+
+        console.log("zoom", direction, newZoom, "delta", zoomDelta);
+
+        cam.controlSet(zoomAbsControl.id, newZoom);
+      }
+    : () => {
+        console.log(`no zoom control found for ${cam.device}`);
+      };
+};
+
 export const moveAxisRelative = (
   cam: Cam,
   axis: "pan" | "tilt",
@@ -336,6 +365,7 @@ export const moveAxisSpeedStart = (
   axis: "pan" | "tilt",
   direction: "up" | "down" | "left" | "right",
 ) => {
+  console.log(`moveAxisSpeedStart`);
   const speedControl = getControl(cam, `${axis} speed`);
   if (speedControl) {
     console.log(cam.device, axis, "start", direction);
@@ -347,6 +377,7 @@ export const moveAxisSpeedStart = (
 };
 
 export const moveAxisSpeedStop = (cam: Cam, axis: "pan" | "tilt") => {
+  console.log(`moveAxisSpeedStop`);
   const speedControl = getControl(cam, `${axis} speed`);
   if (speedControl) {
     console.log(cam.device, axis, "stop");

@@ -15,9 +15,6 @@ const InitialAPIReducerState: APIStoreState = {
   devices: makeRequestInitialState("video-device/list"),
   getDeviceFormats: makeRequestInitialState("video-device/:deviceId/formats"),
   getDeviceControls: makeRequestInitialState("video-device/:deviceId/controls"),
-  setDevicePositionControl: makeRequestInitialState(
-    "video-device/:deviceId/control/:axis/:direction/position",
-  ),
   setDeviceSpeedControlStart: makeRequestInitialState(
     "video-device/:deviceId/control/:axis/:direction/speed/start",
   ),
