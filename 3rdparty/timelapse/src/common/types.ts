@@ -42,11 +42,8 @@ export interface Config extends JsonObject {
 }
 
 export enum WebSocketVideoMessageTypes {
-  heartbeat = "heartbeat",
   play = "play",
   pause = "pause",
-  stop = "stop",
-  load = "load",
   zoomControl = "zoomControl",
   speedControlStart = "speedControlStart",
   speedControlStop = "speedControlStop",
@@ -78,20 +75,12 @@ export interface WebSocketMsg {
   msg?: AllPayloads;
 }
 
-export interface HeartbeatWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.heartbeat;
-}
 export interface PlayWebsocketMsg extends WebSocketMsg {
   type: WebSocketVideoMessageTypes.play;
 }
+
 export interface PauseWebsocketMsg extends WebSocketMsg {
   type: WebSocketVideoMessageTypes.pause;
-}
-export interface StopWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.stop;
-}
-export interface LoadWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.load;
 }
 
 export interface ZoomControlWebsocketMsg extends WebSocketMsg {
@@ -109,11 +98,8 @@ export interface SpeedControlStopWebsocketMsg extends WebSocketMsg {
 }
 
 export type AllWebsocketMsgs =
-  | HeartbeatWebsocketMsg
   | PlayWebsocketMsg
   | PauseWebsocketMsg
-  | StopWebsocketMsg
-  | LoadWebsocketMsg
   | ZoomControlWebsocketMsg
   | SpeedControlStartWebsocketMsg
   | SpeedControlStopWebsocketMsg;

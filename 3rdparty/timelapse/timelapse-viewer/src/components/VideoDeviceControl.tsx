@@ -20,37 +20,12 @@ import {
   WebSocketVideoMessageTypes,
 } from "../common/types";
 
-const mapState = (state: RootState) => ({
-  getDeviceFormats: state.api.getDeviceFormats.value,
-  getDeviceControls: state.api.getDeviceControls.value,
-});
-
-const mapDispatch = {
-  onGetDeviceFormats: (deviceId: DeviceId) =>
-    apiCall("getDeviceFormats", { deviceId }),
-  onGetDeviceControls: (deviceId: DeviceId) =>
-    apiCall("getDeviceControls", { deviceId }),
-  onSetDeviceZoomControl: (deviceId: DeviceId, direction: "in" | "out") =>
-    apiCall("setDeviceZoomControl", { deviceId, direction }),
-  onSetDeviceSpeedControlStart: (
-    deviceId: DeviceId,
-    axis: "pan" | "tilt",
-    direction: "up" | "down" | "left" | "right",
-  ) => apiCall("setDeviceSpeedControlStart", { deviceId, axis, direction }),
-  onSetDeviceSpeedControlStop: (deviceId: DeviceId, axis: "pan" | "tilt") =>
-    apiCall("setDeviceSpeedControlStop", { deviceId, axis }),
-};
-
-const connector = connect(mapState, mapDispatch);
-
-type PropsFromRedux = ConnectedProps<typeof connector>;
-
 interface OwnProps {
   deviceId: DeviceId;
   sendMessage: (m: AllWebsocketMsgs) => void;
 }
 
-type Props = PropsFromRedux & OwnProps;
+type Props = OwnProps;
 
 interface State {
   left: boolean;
@@ -275,12 +250,10 @@ class VideoDeviceControl extends React.Component<Props, State> {
   }
 }
 
-const WrappedVideoDeviceControl = connector(VideoDeviceControl);
-
 const VideoDeviceWrapperControl = (origProps: OwnProps) => {
   return (
     <RenderIfPtzEnabled
-      WrappedComponent={() => <WrappedVideoDeviceControl {...origProps} />}
+      WrappedComponent={() => <VideoDeviceControl {...origProps} />}
     />
   );
 };

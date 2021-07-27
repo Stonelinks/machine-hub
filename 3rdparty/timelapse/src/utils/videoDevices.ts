@@ -32,6 +32,7 @@ export const listVideoDevices = async (): Promise<string[]> => {
   });
 };
 
+// https://github.com/hypersolution1/v4l2camera/blob/f31d5f3729ecf55d257fa3cf61710a055fc7a0da/readme.md#api
 interface Format {
   formatName: "MJPG" | "YUYV" | "BGR3" | "YU12";
   format: number;
@@ -46,7 +47,7 @@ interface Format {
 interface Control {
   id: number;
   name: string;
-  type: "int";
+  type: "int" | "bool" | "button" | "menu";
   min: number;
   max: number;
   step: number;
@@ -120,7 +121,6 @@ export const getOrCreateCameraDevice = (
 };
 
 export const setCameraDeviceZoom = (deviceId: DeviceId, zoom: number) => {
-  console.log(`setCameraDeviceZoom, deviceId=${deviceId} zoom=${zoom}`);
   cameraDevices[deviceId].zoom = zoom;
 };
 
@@ -152,7 +152,7 @@ export const start = async (deviceId: DeviceId): Promise<void> => {
         // await centerAxis(cam, "pan");
 
         cam.start();
-        const fpsMs = fpsToMs(getFps(cam.configGet()));
+        const fpsMs = getFps(cam.configGet()) / MILLISECONDS_IN_SECOND;
 
         const captureOnce = (extraCb?: () => void) => {
           cam.capture(success => {
@@ -217,10 +217,8 @@ export const takeSnapshot = async (deviceId: DeviceId): Promise<Buffer> => {
 };
 
 export const getFps = (f: Format) => {
-  return f.interval.numerator / f.interval.denominator;
+  return f.interval.denominator / f.interval.numerator;
 };
-
-export const fpsToMs = (fps: number) => fps * MILLISECONDS_IN_SECOND;
 
 export const autoSelectFormat = (cam: Cam) => {
   const mjpegFormats = cam.formats.filter(f => f.formatName === "MJPG");
@@ -243,6 +241,8 @@ export const autoSelectFormat = (cam: Cam) => {
       }
     }
   });
+
+  console.log(`setting ${JSON.stringify(largestFormat)}`);
 
   return largestFormat;
 };
@@ -365,7 +365,6 @@ export const moveAxisSpeedStart = (
   axis: "pan" | "tilt",
   direction: "up" | "down" | "left" | "right",
 ) => {
-  console.log(`moveAxisSpeedStart`);
   const speedControl = getControl(cam, `${axis} speed`);
   if (speedControl) {
     console.log(cam.device, axis, "start", direction);
@@ -377,7 +376,6 @@ export const moveAxisSpeedStart = (
 };
 
 export const moveAxisSpeedStop = (cam: Cam, axis: "pan" | "tilt") => {
-  console.log(`moveAxisSpeedStop`);
   const speedControl = getControl(cam, `${axis} speed`);
   if (speedControl) {
     console.log(cam.device, axis, "stop");

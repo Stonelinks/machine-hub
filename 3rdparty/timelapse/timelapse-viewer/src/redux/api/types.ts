@@ -1,27 +1,22 @@
-export enum APIRequestState {
+export enum ApiRequestState {
   none = "none",
   loading = "loading",
   done = "done",
 }
 
-export interface APIRequest {
+export interface ApiRequest {
   url: string;
-  state: APIRequestState;
+  state: ApiRequestState;
   value: any;
 }
 
-export interface APIStoreState {
-  getConfig: APIRequest;
-  setConfigValue: APIRequest;
-  devices: APIRequest;
-  getDeviceFormats: APIRequest;
-  getDeviceControls: APIRequest;
-  setDeviceSpeedControlStart: APIRequest;
-  setDeviceSpeedControlStop: APIRequest;
-  setDeviceZoomControl: APIRequest;
-  getCaptures: APIRequest;
-  getCaptureFiles: APIRequest;
-  getResultsFileList: APIRequest;
+export interface ApiStoreState {
+  getConfig: ApiRequest;
+  setConfigValue: ApiRequest;
+  devices: ApiRequest;
+  getCaptures: ApiRequest;
+  getCaptureFiles: ApiRequest;
+  getResultsFileList: ApiRequest;
 }
 
-export type APIResource = keyof APIStoreState;
+export type ApiResource = keyof ApiStoreState;

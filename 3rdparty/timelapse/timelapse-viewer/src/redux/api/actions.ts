@@ -1,5 +1,5 @@
 import { Action, AppThunk } from "../types";
-import { APIResource } from "./types";
+import { ApiResource } from "./types";
 import { apiFetch, fillInUrlTemplate } from "../../utils/api";
 
 export const API_REQUEST = "API_REQUEST";
@@ -8,7 +8,7 @@ export const API_RESPONSE = "API_RESPONSE";
 export interface APIRequestAction extends Action<typeof API_REQUEST> {
   type: typeof API_REQUEST;
   payload: {
-    resource: APIResource;
+    resource: ApiResource;
   };
 }
 export const apiRequestAction = ({
@@ -23,7 +23,7 @@ export const apiRequestAction = ({
 export interface APIResponseAction extends Action<typeof API_RESPONSE> {
   type: typeof API_RESPONSE;
   payload: {
-    resource: APIResource;
+    resource: ApiResource;
     response: any;
   };
 }
@@ -39,7 +39,7 @@ export const apiResponseAction = ({
 });
 
 export const apiCall = (
-  resource: APIResource,
+  resource: ApiResource,
   urlOptions?: object,
 ): AppThunk<void> => async (dispatch, getState) => {
   console.log(

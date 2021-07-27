@@ -4,16 +4,11 @@ import { FfmpegCommand } from "fluent-ffmpeg";
 import { Readable, Writable } from "stream";
 import { VIDEO_STREAM_HEIGHT, VIDEO_STREAM_WIDTH } from "../common/constants";
 import { decode } from "../common/encode";
-import {
-  DeviceId,
-  SpeedControlStartPayload,
-  SpeedControlStopPayload,
-  WebSocketVideoMessageTypes,
-  ZoomControlPayload,
-} from "../common/types";
+import { DeviceId, WebSocketVideoMessageTypes } from "../common/types";
 import { now } from "../utils/cron";
 import { getFfmpeg } from "../utils/ffmpeg";
 import {
+  getFps,
   getOrCreateCameraDevice,
   getZoomRelativeControl,
   moveAxisSpeedStart,
@@ -144,28 +139,35 @@ const startFfmpegStreamer = async (deviceId: DeviceId) => {
 
   await start(deviceId);
 
+  const cam = getOrCreateCameraDevice(deviceId);
+  const fps = getFps(cam.cam.configGet());
   const streamFfmpegCommand = getFfmpeg({
     stdoutLines: 1,
   })
     .input(
       new Readable({
         read() {
-          getOrCreateCameraDevice(deviceId).emitter.once(
-            "frame",
-            (buffer: Buffer) => {
-              this.push(buffer);
-            },
-          );
+          cam.emitter.once("frame", (buffer: Buffer) => {
+            this.push(buffer);
+          });
         },
       }),
     )
     .inputFormat("mjpeg")
+    .inputFPS(fps)
     .noAudio()
-    .format("mpegts")
-    .videoCodec("mpeg1video")
+    .videoCodec("libx264")
+    .outputFormat("rawvideo")
+    .videoBitrate("500k")
     .size(`${VIDEO_STREAM_WIDTH}x${VIDEO_STREAM_HEIGHT}`)
-    .videoBitrate("256k")
-    .outputOptions("-bf 0");
+    .outputFPS(fps)
+    .outputOptions([
+      "-vprofile baseline",
+      "-bufsize 600k",
+      "-tune zerolatency",
+      "-pix_fmt yuv420p",
+      // "-g 30",
+    ]);
 
   streamFfmpegCommand.on("start", commandStr => {
     console.log(`ffmpeg process started: ${commandStr}`);
@@ -173,9 +175,7 @@ const startFfmpegStreamer = async (deviceId: DeviceId) => {
 
   streamFfmpegCommand.on("error", err => {
     console.log(`ffmpeg has been killed for ${deviceId}`);
-    if (err) {
-      console.error(err);
-    }
+    console.error(err);
   });
 
   streamingInfo[deviceId].ffmpegHandle = streamFfmpegCommand;
@@ -244,7 +244,8 @@ export const streamingRoutes = async (app: Application) => {
       await startFfmpegStreamer(deviceId);
     }
     let isPlaying = true;
-    const listener = data => {
+
+    const listener = (data: Buffer) => {
       if (isPlaying) {
         ws.send(data);
       }
@@ -272,7 +273,6 @@ export const streamingRoutes = async (app: Application) => {
             isPlaying = true;
             break;
           case WebSocketVideoMessageTypes.pause:
-          case WebSocketVideoMessageTypes.stop:
             isPlaying = false;
             break;
           case WebSocketVideoMessageTypes.zoomControl:

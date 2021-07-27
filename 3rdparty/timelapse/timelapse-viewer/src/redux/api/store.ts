@@ -1,29 +1,18 @@
 import produce from "immer";
-import { APIRequest, APIRequestState, APIStoreState } from "./types";
+import { ApiRequest, ApiRequestState, ApiStoreState } from "./types";
 import { APIActions, API_REQUEST, API_RESPONSE } from "./actions";
 import { nothing } from "../../common/nothing";
 
-const makeRequestInitialState = (url: string): APIRequest => ({
+const makeRequestInitialState = (url: string): ApiRequest => ({
   url,
-  state: APIRequestState.none,
+  state: ApiRequestState.none,
   value: nothing,
 });
 
-const InitialAPIReducerState: APIStoreState = {
+const InitialAPIReducerState: ApiStoreState = {
   getConfig: makeRequestInitialState("config/get"),
   setConfigValue: makeRequestInitialState("config/:configKey/set/:configValue"),
   devices: makeRequestInitialState("video-device/list"),
-  getDeviceFormats: makeRequestInitialState("video-device/:deviceId/formats"),
-  getDeviceControls: makeRequestInitialState("video-device/:deviceId/controls"),
-  setDeviceSpeedControlStart: makeRequestInitialState(
-    "video-device/:deviceId/control/:axis/:direction/speed/start",
-  ),
-  setDeviceSpeedControlStop: makeRequestInitialState(
-    "video-device/:deviceId/control/:axis/speed/stop",
-  ),
-  setDeviceZoomControl: makeRequestInitialState(
-    "video-device/:deviceId/control/zoom/:direction",
-  ),
   getCaptures: makeRequestInitialState("timelapse/capture/list"),
   getCaptureFiles: makeRequestInitialState("timelapse/capture/:captureId/list"),
   getResultsFileList: makeRequestInitialState(
@@ -31,18 +20,18 @@ const InitialAPIReducerState: APIStoreState = {
   ),
 };
 
-const APIStore = (
+const ApiStore = (
   state = InitialAPIReducerState,
   action: APIActions,
-): APIStoreState => {
+): ApiStoreState => {
   switch (action.type) {
     case API_REQUEST:
       return produce(state, draft => {
-        draft[action.payload.resource].state = APIRequestState.loading;
+        draft[action.payload.resource].state = ApiRequestState.loading;
       });
     case API_RESPONSE:
       return produce(state, draft => {
-        draft[action.payload.resource].state = APIRequestState.done;
+        draft[action.payload.resource].state = ApiRequestState.done;
         draft[action.payload.resource].value = action.payload.response;
       });
     default:
@@ -50,4 +39,4 @@ const APIStore = (
   }
 };
 
-export default APIStore;
+export default ApiStore;
