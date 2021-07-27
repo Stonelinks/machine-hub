@@ -2,9 +2,17 @@ import { EventEmitter } from "events";
 import { Application } from "express-ws";
 import { FfmpegCommand } from "fluent-ffmpeg";
 import { Readable, Writable } from "stream";
-import { VIDEO_STREAM_HEIGHT, VIDEO_STREAM_WIDTH } from "../common/constants";
+import {
+  VIDEO_STREAM_HEIGHT,
+  VIDEO_STREAM_WIDTH,
+  WS_PING_INTERVAL_MS,
+} from "../common/constants";
 import { decode } from "../common/encode";
-import { DeviceId, WebSocketVideoMessageTypes } from "../common/types";
+import {
+  AllVideoWebSocketMsgs,
+  DeviceId,
+  VideoWebSocketMsgTypes,
+} from "../common/types";
 import { now } from "../utils/cron";
 import { getFfmpeg } from "../utils/ffmpeg";
 import {
@@ -237,22 +245,36 @@ export const streamingRoutes = async (app: Application) => {
 
   app.ws("/stream/:deviceId/ffmpeg.ws", async (ws, req) => {
     const deviceId = decode(req.params.deviceId);
-    console.log(`ws open ${deviceId}`);
+    const log = (...args: any[]) => console.log(deviceId, ...args);
+    const err = (...args: any[]) => console.error(deviceId, ...args);
+    const send = (m: Buffer | AllVideoWebSocketMsgs) => {
+      if (Buffer.isBuffer(m)) {
+        ws.send(m);
+      } else {
+        const msgStr = JSON.stringify(m);
+        log(`ws send ${msgStr}`);
+        ws.send(msgStr);
+      }
+    };
+    log(`ws open`);
     videoStreamUserConnected(deviceId, VideoStreamTypes.ffmpeg);
     const { ffmpegHandle } = getOrCreateStreamingInfo(deviceId);
     if (!ffmpegHandle) {
       await startFfmpegStreamer(deviceId);
     }
     let isPlaying = true;
-
     const listener = (data: Buffer) => {
       if (isPlaying) {
-        ws.send(data);
+        send(data);
       }
     };
+    const pingInterval = setInterval(() => {
+      send({ type: VideoWebSocketMsgTypes.ping });
+    }, WS_PING_INTERVAL_MS);
+
     getOrCreateFfmpegFrameEmitter(deviceId).on("data", listener);
     ws.on("close", () => {
-      console.log(`ws close ${deviceId}`);
+      log(`ws close`);
       videoStreamUserDisconnected(deviceId, VideoStreamTypes.ffmpeg);
       if (
         getOrCreateStreamingInfo(deviceId).ffmpegNumVideoUsersConnected === 0
@@ -260,37 +282,37 @@ export const streamingRoutes = async (app: Application) => {
         stopFfmpegStreamer(deviceId);
       }
       getOrCreateFfmpegFrameEmitter(deviceId).removeListener("data", listener);
+      clearInterval(pingInterval);
     });
 
     ws.on("message", m => {
-      console.log(`received ${m}`);
-
+      log(`ws received ${m}`);
       try {
         const p = JSON.parse(m as string);
         const { cam, zoom } = getOrCreateCameraDevice(deviceId);
-        switch (p.type as WebSocketVideoMessageTypes) {
-          case WebSocketVideoMessageTypes.play:
+        switch (p.type as VideoWebSocketMsgTypes) {
+          case VideoWebSocketMsgTypes.play:
             isPlaying = true;
             break;
-          case WebSocketVideoMessageTypes.pause:
+          case VideoWebSocketMsgTypes.pause:
             isPlaying = false;
             break;
-          case WebSocketVideoMessageTypes.zoomControl:
+          case VideoWebSocketMsgTypes.zoomControl:
             const zoomRelControl = getZoomRelativeControl(cam);
             zoomRelControl(zoom, p.msg.direction);
             break;
-          case WebSocketVideoMessageTypes.speedControlStart:
+          case VideoWebSocketMsgTypes.speedControlStart:
             moveAxisSpeedStart(cam, p.msg.axis, p.msg.direction);
             break;
-          case WebSocketVideoMessageTypes.speedControlStop:
+          case VideoWebSocketMsgTypes.speedControlStop:
             moveAxisSpeedStop(cam, p.msg.axis);
             break;
           default:
             break;
         }
       } catch (e) {
-        console.error("received message that isn't JSON?");
-        console.error(e.stack);
+        err("received message that isn't JSON?");
+        err(e.stack);
       }
     });
   });

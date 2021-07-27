@@ -2,6 +2,7 @@ import React from "react";
 import { decode } from "../common/encode";
 import { apiFetch } from "../utils/api";
 import { frontendPath, isLocalhost, reload } from "../utils/url";
+import AllVideoDeviceSnapshotViewer from "./AllVideoDeviceSnapshotViewer";
 import CaptureFileList from "./CaptureFileList";
 import CaptureList from "./CaptureList";
 import ConfigEditor from "./ConfigEditor";
@@ -58,7 +59,7 @@ const App = () => {
 
           <div>
             <NavItem to={frontendPath("/")} title="Config" />
-            <NavItem to={frontendPath("cameras")} title="Cameras" />
+            <NavItem to={frontendPath("streams")} title="Streams" />
             <NavItem to={frontendPath("captures")} title="Captures" />
           </div>
           <div>
@@ -110,8 +111,15 @@ const App = () => {
                 )}
               </Match>
 
-              <Match path={frontendPath("cameras")}>
-                <VideoDeviceViewer />
+              <Match path={frontendPath("stream/:deviceId")}>
+                {({ deviceId }: { deviceId: string }) => (
+                  <VideoDeviceViewer deviceId={decode(deviceId)} />
+                )}
+              </Match>
+
+              <Match path={frontendPath("streams")}>
+                <AllVideoDeviceSnapshotViewer />
+                {/* <VideoDeviceViewer /> */}
               </Match>
 
               {/* Catchall has to go last */}

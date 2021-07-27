@@ -2,6 +2,7 @@ import * as fs from "fs";
 import { timeout, MILLISECONDS_IN_SECOND } from "../common/time";
 import { EventEmitter } from "events";
 import { DeviceId } from "../common/types";
+import { VIDEO_FPS } from "../common/constants";
 
 // tslint:disable-next-line:no-var-requires
 const v4l2camera = require("v4l2camera");
@@ -227,7 +228,7 @@ export const autoSelectFormat = (cam: Cam) => {
   mjpegFormats.forEach((f: Format) => {
     const { width, height } = f;
     const thisFps = getFps(f);
-    const fastestFps = getFps(largestFormat as Format);
+    // const fastestFps = getFps(largestFormat as Format);
     const largestWidth = largestFormat.width;
     const largestHeight = largestFormat.height;
 
@@ -235,8 +236,8 @@ export const autoSelectFormat = (cam: Cam) => {
     if (width > largestWidth || height > largestHeight) {
       largestFormat = f;
     } else if (width === largestWidth && height === largestHeight) {
-      // also select fastest framerate
-      if (thisFps > fastestFps) {
+      // also select framerate
+      if (thisFps === VIDEO_FPS) {
         largestFormat = f;
       }
     }

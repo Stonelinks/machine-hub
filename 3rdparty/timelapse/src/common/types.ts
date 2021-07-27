@@ -41,7 +41,9 @@ export interface Config extends JsonObject {
   // zoomStepDirection: "in" | "out";
 }
 
-export enum WebSocketVideoMessageTypes {
+export enum VideoWebSocketMsgTypes {
+  ping = "ping",
+  pong = "pong",
   play = "play",
   pause = "pause",
   zoomControl = "zoomControl",
@@ -65,41 +67,51 @@ export interface SpeedControlStopPayload {
   axis: "pan" | "tilt";
 }
 
-type AllPayloads =
+type AllVideoWebSocketMsgPayloads =
   | ZoomControlPayload
   | SpeedControlStartPayload
   | SpeedControlStopPayload;
 
-export interface WebSocketMsg {
-  type: WebSocketVideoMessageTypes;
-  msg?: AllPayloads;
+export interface VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes;
+  msg?: AllVideoWebSocketMsgPayloads;
 }
 
-export interface PlayWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.play;
+export interface PingVideoWebSocketMsg extends VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes.ping;
 }
 
-export interface PauseWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.pause;
+export interface PongVideoWebSocketMsg extends VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes.pong;
 }
 
-export interface ZoomControlWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.zoomControl;
+export interface PlayVideoWebSocketMsg extends VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes.play;
+}
+
+export interface PauseVideoWebSocketMsg extends VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes.pause;
+}
+
+export interface ZoomControlVideoWebSocketMsg extends VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes.zoomControl;
   msg: ZoomControlPayload;
 }
 
-export interface SpeedControlStartWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.speedControlStart;
+export interface SpeedControlStartVideoWebSocketMsg extends VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes.speedControlStart;
   msg: SpeedControlStartPayload;
 }
-export interface SpeedControlStopWebsocketMsg extends WebSocketMsg {
-  type: WebSocketVideoMessageTypes.speedControlStop;
+export interface SpeedControlStopVideoWebSocketMsg extends VideoWebSocketMsg {
+  type: VideoWebSocketMsgTypes.speedControlStop;
   msg: SpeedControlStopPayload;
 }
 
-export type AllWebsocketMsgs =
-  | PlayWebsocketMsg
-  | PauseWebsocketMsg
-  | ZoomControlWebsocketMsg
-  | SpeedControlStartWebsocketMsg
-  | SpeedControlStopWebsocketMsg;
+export type AllVideoWebSocketMsgs =
+  | PingVideoWebSocketMsg
+  | PongVideoWebSocketMsg
+  | PlayVideoWebSocketMsg
+  | PauseVideoWebSocketMsg
+  | ZoomControlVideoWebSocketMsg
+  | SpeedControlStartVideoWebSocketMsg
+  | SpeedControlStopVideoWebSocketMsg;

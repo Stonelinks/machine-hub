@@ -1,12 +1,20 @@
 import _ from "lodash";
 import React from "react";
-import { VIDEO_STREAM_HEIGHT, VIDEO_STREAM_WIDTH } from "../common/constants";
 import { MILLISECONDS_IN_SECOND } from "../common/time";
-import { AllWebsocketMsgs, WebSocketVideoMessageTypes } from "../common/types";
+import {
+  AllVideoWebSocketMsgs,
+  VideoWebSocketMsg,
+  VideoWebSocketMsgTypes,
+} from "../common/types";
 import { encode } from "../common/encode";
 import { WS_BASE_URL } from "../utils/api";
 import VideoDeviceControl from "./VideoDeviceControl";
 import JMuxer from "jmuxer";
+import {
+  VIDEO_FPS,
+  VIDEO_STREAM_WIDTH,
+  VIDEO_STREAM_HEIGHT,
+} from "../common/constants";
 
 interface Props {
   deviceId: string;
@@ -19,6 +27,7 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
   componentWillUnmount() {
     window.removeEventListener("focus", this.onFocus);
     window.removeEventListener("blur", this.onBlur);
+    this.getSocket().close();
   }
 
   componentDidMount = _.debounce(() => {
@@ -30,15 +39,31 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
     this.mux = new JMuxer({
       node: this.getPlayerId(),
       mode: "video",
-      flushingTime: 50,
-      fps: 30, // TODO hardcoded for now, maybe have this get set by the server?
+      flushingTime: 0,
+      fps: VIDEO_FPS,
       debug: false,
     });
 
     socket.addEventListener("message", event => {
-      this.mux?.feed({
-        video: new Uint8Array(event.data),
-      });
+      if (typeof event.data === "string") {
+        try {
+          const m = JSON.parse(event.data) as VideoWebSocketMsg;
+          switch (m.type) {
+            case VideoWebSocketMsgTypes.ping:
+              this.sendMessage({ type: VideoWebSocketMsgTypes.pong });
+              break;
+
+            default:
+              break;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        this.mux?.feed({
+          video: new Uint8Array(event.data),
+        });
+      }
     });
 
     socket.addEventListener("error", e => {
@@ -46,18 +71,18 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
     });
   }, MILLISECONDS_IN_SECOND);
 
-  sendMessage = (m: AllWebsocketMsgs) => {
+  sendMessage = (m: AllVideoWebSocketMsgs) => {
     console.log(`FfmpegVideoStreamPlayer sending ${m.type}`);
     this.getSocket()?.send(JSON.stringify(m));
   };
 
   onFocus = () => {
-    this.sendMessage({ type: WebSocketVideoMessageTypes.play });
+    this.sendMessage({ type: VideoWebSocketMsgTypes.play });
     this.playVideo();
   };
 
   onBlur = () => {
-    this.sendMessage({ type: WebSocketVideoMessageTypes.pause });
+    this.sendMessage({ type: VideoWebSocketMsgTypes.pause });
     this.pauseVideo();
   };
 

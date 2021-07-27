@@ -15,14 +15,14 @@ import {
   FaMinus,
 } from "react-icons/fa";
 import {
-  AllWebsocketMsgs,
+  AllVideoWebSocketMsgs,
   DeviceId,
-  WebSocketVideoMessageTypes,
+  VideoWebSocketMsgTypes,
 } from "../common/types";
 
 interface OwnProps {
   deviceId: DeviceId;
-  sendMessage: (m: AllWebsocketMsgs) => void;
+  sendMessage: (m: AllVideoWebSocketMsgs) => void;
 }
 
 type Props = OwnProps;
@@ -87,7 +87,7 @@ class VideoDeviceControl extends React.Component<Props, State> {
         const { sendMessage, deviceId } = this.props;
         console.log("start", axis, direction);
         sendMessage({
-          type: WebSocketVideoMessageTypes.speedControlStart,
+          type: VideoWebSocketMsgTypes.speedControlStart,
           msg: { deviceId, axis, direction },
         });
         (this.setState as any)({ [direction]: true });
@@ -104,7 +104,7 @@ class VideoDeviceControl extends React.Component<Props, State> {
       const { sendMessage, deviceId } = this.props;
       console.log("stop", axis);
       sendMessage({
-        type: WebSocketVideoMessageTypes.speedControlStop,
+        type: VideoWebSocketMsgTypes.speedControlStop,
         msg: { deviceId, axis },
       });
       (this.setState as any)({ [direction]: false });
@@ -115,7 +115,7 @@ class VideoDeviceControl extends React.Component<Props, State> {
     return throttle(() => {
       const { sendMessage, deviceId } = this.props;
       sendMessage({
-        type: WebSocketVideoMessageTypes.zoomControl,
+        type: VideoWebSocketMsgTypes.zoomControl,
         msg: { deviceId, direction },
       });
       (this.setState as any)({ [direction]: true });

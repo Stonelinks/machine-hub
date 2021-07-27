@@ -1,5 +1,5 @@
 import * as path from "path";
-import { DAYS_IN_WEEK } from "./time";
+import { DAYS_IN_WEEK, MILLISECONDS_IN_SECOND } from "./time";
 
 const prefixPath = (s: string) =>
   process.env.BASE_PATH
@@ -16,9 +16,12 @@ export const SERVER_PORT =
   parseInt((process as any).env.SERVER_PORT, 10) || 4001;
 export const CONFIG_FILE = prefixPath("config.json");
 
+export const VIDEO_FPS = 15;
 export const VIDEO_STREAM_WIDTH = 640;
 export const VIDEO_STREAM_HEIGHT = 480;
 
 export const DEVICE_ID_NONE = "Null device ID";
 
 export const TIMELAPSE_CHUNK_SIZE = 200;
+
+export const WS_PING_INTERVAL_MS = 15 * MILLISECONDS_IN_SECOND;
