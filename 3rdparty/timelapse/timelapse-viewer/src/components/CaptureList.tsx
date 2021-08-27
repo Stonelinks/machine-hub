@@ -1,8 +1,10 @@
 import moment from "moment";
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
+import { encode } from "../common/encode";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
+import { HTTP_BASE_URL } from "../utils/api";
 import { frontendPath } from "../utils/url";
 
 // tslint:disable-next-line:no-var-requires
@@ -53,7 +55,7 @@ const CaptureFileList = ({ captures, onGetCaptures }: Props) => {
                   border: "1px grey solid",
                 }}
               >
-                <Link to={frontendPath(`capture/${name}`)}>
+                <Link to={frontendPath(`capture/${encode(name)}`)}>
                   <pre style={{ textAlign: "center", fontWeight: "bold" }}>
                     {name}
                   </pre>
@@ -68,6 +70,20 @@ const CaptureFileList = ({ captures, onGetCaptures }: Props) => {
                     ].join("\n")}
                   </pre>
                 </Link>
+                <div style={{ textAlign: "center" }}>
+                  <button
+                    onClick={async () => {
+                      if (window.confirm("Do you really want delete this?")) {
+                        await window.fetch(
+                          `${HTTP_BASE_URL}/deleteAll/${encode(name)}`,
+                        );
+                        onGetCaptures();
+                      }
+                    }}
+                  >
+                    delete
+                  </button>
+                </div>
               </div>
             ),
           )

@@ -87,15 +87,16 @@ const ResultsFileList = ({
                 Download
               </a>
               {"\n"}
-              <a
-                href="#"
+              <button
                 onClick={async () => {
-                  await window.fetch(`${HTTP_BASE_URL}/delete/${encode(f)}`);
-                  onGetCaptureFiles(captureId);
+                  if (window.confirm("Do you really want delete this?")) {
+                    await window.fetch(`${HTTP_BASE_URL}/delete/${encode(f)}`);
+                    onGetCaptureFiles(captureId);
+                  }
                 }}
               >
                 Delete
-              </a>
+              </button>
             </pre>
           </div>
         </div>

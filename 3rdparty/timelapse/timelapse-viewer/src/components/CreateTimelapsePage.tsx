@@ -4,6 +4,7 @@ import { RootState } from "../redux";
 import { HTTP_BASE_URL, fillInUrlTemplate } from "../utils/api";
 import { MILLISECONDS_IN_SECOND } from "../common/time";
 import { frontendPath, navigate } from "../utils/url";
+import { encode } from "../common/encode";
 
 const mapState = (state: RootState) => ({});
 
@@ -46,7 +47,7 @@ const CreateTimelapsePage = ({ captureId, deviceId }: Props) => {
     xhr.onload = () => {
       setResponse(xhr.response);
       setTimeout(() => {
-        navigate(frontendPath(`capture/${captureId}`));
+        navigate(frontendPath(`capture/${encode(captureId)}`));
       }, 2 * MILLISECONDS_IN_SECOND);
     };
     xhr.onprogress = () => {

@@ -13,7 +13,7 @@ import { getThumbnail } from "./utils/images";
 import { decode } from "./common/encode";
 import * as expressWs from "express-ws";
 import { streamingRoutes } from "./routes/streaming";
-import { deleteFile } from "./utils/files";
+import { deleteDir, deleteFile, listDirectory } from "./utils/files";
 
 const app = (express() as unknown) as expressWs.Application;
 
@@ -54,6 +54,12 @@ app.get("/thumb/:imageFilePath", async (req, res) => {
 app.get("/delete/:filePath", async (req, res) => {
   const filePath = decode(req.params.filePath);
   await deleteFile(path.join(CAPTURE_FOLDER, filePath));
+  res.send(200);
+});
+
+app.get("/deleteAll/:filePath", async (req, res) => {
+  const filePath = decode(req.params.filePath);
+  await deleteDir(path.join(CAPTURE_FOLDER, filePath));
   res.send(200);
 });
 

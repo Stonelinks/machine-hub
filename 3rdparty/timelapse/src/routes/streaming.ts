@@ -11,6 +11,7 @@ import { decode } from "../common/encode";
 import {
   AllVideoWebSocketMsgs,
   DeviceId,
+  VideoStreamTypes,
   VideoWebSocketMsgTypes,
 } from "../common/types";
 import { now } from "../utils/cron";
@@ -22,12 +23,8 @@ import {
   moveAxisSpeedStart,
   moveAxisSpeedStop,
   start,
+  takeSnapshot,
 } from "../utils/videoDevices";
-
-enum VideoStreamTypes {
-  ffmpeg = "ffmpeg",
-  mjpeg = "mjpeg",
-}
 
 interface StreamingInfo {
   ffmpegNumVideoUsersConnected: number;
@@ -214,7 +211,13 @@ const stopFfmpegStreamer = (deviceId: DeviceId) => {
 };
 
 export const streamingRoutes = async (app: Application) => {
-  app.get("/stream/:deviceId/stream.mjpg", async (req, res) => {
+  app.get("/stream/:deviceId/snapshot", async (req, res) => {
+    const deviceId = decode(req.params.deviceId);
+    const data = await takeSnapshot(deviceId);
+    res.send(data);
+  });
+
+  app.get("/stream/:deviceId/mjpeg", async (req, res) => {
     const deviceId = decode(req.params.deviceId);
     await start(deviceId);
     videoStreamUserConnected(deviceId, VideoStreamTypes.mjpeg);
@@ -243,7 +246,7 @@ export const streamingRoutes = async (app: Application) => {
     });
   });
 
-  app.ws("/stream/:deviceId/ffmpeg.ws", async (ws, req) => {
+  app.ws("/stream/:deviceId/ws", async (ws, req) => {
     const deviceId = decode(req.params.deviceId);
     const log = (...args: any[]) => console.log(deviceId, ...args);
     const err = (...args: any[]) => console.error(deviceId, ...args);
@@ -297,6 +300,55 @@ export const streamingRoutes = async (app: Application) => {
           case VideoWebSocketMsgTypes.pause:
             isPlaying = false;
             break;
+          case VideoWebSocketMsgTypes.zoomControl:
+            const zoomRelControl = getZoomRelativeControl(cam);
+            zoomRelControl(zoom, p.msg.direction);
+            break;
+          case VideoWebSocketMsgTypes.speedControlStart:
+            moveAxisSpeedStart(cam, p.msg.axis, p.msg.direction);
+            break;
+          case VideoWebSocketMsgTypes.speedControlStop:
+            moveAxisSpeedStop(cam, p.msg.axis);
+            break;
+          default:
+            break;
+        }
+      } catch (e) {
+        err("received message that isn't JSON?");
+        err(e.stack);
+      }
+    });
+  });
+
+  app.ws("/stream/:deviceId/ws_controls_only", async (ws, req) => {
+    const deviceId = decode(req.params.deviceId);
+    const log = (...args: any[]) => console.log(deviceId, ...args);
+    const err = (...args: any[]) => console.error(deviceId, ...args);
+    const send = (m: Buffer | AllVideoWebSocketMsgs) => {
+      if (Buffer.isBuffer(m)) {
+        ws.send(m);
+      } else {
+        const msgStr = JSON.stringify(m);
+        log(`ws send ${msgStr}`);
+        ws.send(msgStr);
+      }
+    };
+    log(`ws open`);
+    const pingInterval = setInterval(() => {
+      send({ type: VideoWebSocketMsgTypes.ping });
+    }, WS_PING_INTERVAL_MS);
+
+    ws.on("close", () => {
+      log(`ws close`);
+      clearInterval(pingInterval);
+    });
+
+    ws.on("message", m => {
+      log(`ws received ${m}`);
+      try {
+        const p = JSON.parse(m as string);
+        const { cam, zoom } = getOrCreateCameraDevice(deviceId);
+        switch (p.type as VideoWebSocketMsgTypes) {
           case VideoWebSocketMsgTypes.zoomControl:
             const zoomRelControl = getZoomRelativeControl(cam);
             zoomRelControl(zoom, p.msg.direction);

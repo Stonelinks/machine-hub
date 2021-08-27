@@ -43,6 +43,11 @@ export interface Config extends JsonObject {
   // zoomStepDirection: "in" | "out";
 }
 
+export enum VideoStreamTypes {
+  ffmpeg = "ffmpeg",
+  mjpeg = "mjpeg",
+}
+
 export enum VideoWebSocketMsgTypes {
   ping = "ping",
   pong = "pong",

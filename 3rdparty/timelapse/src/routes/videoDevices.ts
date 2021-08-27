@@ -2,28 +2,18 @@ import { Application } from "express-ws";
 import { decode } from "../common/encode";
 import { MILLISECONDS_IN_SECOND, timeout } from "../common/time";
 import {
-  getControl,
   getOrCreateCameraDevice,
-  getZoomInfo,
   getZoomRelativeControl,
   listVideoDevices,
   moveAxisRelative,
   moveAxisSpeedStart,
   moveAxisSpeedStop,
-  setCameraDeviceZoom,
-  takeSnapshot,
 } from "../utils/videoDevices";
 
 export const registerVideoDeviceRoutes = async (app: Application) => {
   app.get("/video-device/list", async (req, res) => {
     const l = await listVideoDevices();
     res.send(JSON.stringify(l));
-  });
-
-  app.get("/video-device/:deviceId/snapshot.jpg", async (req, res) => {
-    const deviceId = decode(req.params.deviceId);
-    const data = await takeSnapshot(deviceId);
-    res.send(data);
   });
 
   app.get("/video-device/:deviceId/formats", (req, res) => {

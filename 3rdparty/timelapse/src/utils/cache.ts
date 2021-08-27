@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as shell from "shelljs";
 import * as flatCache from "flat-cache";
 import { CACHE_FOLDER, CACHE_MAX_AGE_DAYS } from "../common/constants";
 import { MILLISECONDS_IN_DAY } from "../common/time";

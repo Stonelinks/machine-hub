@@ -22,6 +22,6 @@ export const VIDEO_STREAM_HEIGHT = 480;
 
 export const DEVICE_ID_NONE = "Null device ID";
 
-export const TIMELAPSE_CHUNK_SIZE = 200;
+export const TIMELAPSE_CHUNK_SIZE = 100;
 
 export const WS_PING_INTERVAL_MS = 15 * MILLISECONDS_IN_SECOND;

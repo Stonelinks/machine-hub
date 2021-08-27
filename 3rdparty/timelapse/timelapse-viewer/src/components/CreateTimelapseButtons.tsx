@@ -63,7 +63,7 @@ const CreateTimelapseButtons = ({
           return (
             <Link
               to={frontendPath(
-                `capture/${captureId}/createTimelapse/${encode(d)}`,
+                `capture/${encode(captureId)}/createTimelapse/${encode(d)}`,
               )}
             >
               <button>Create Timelapse for {d}</button>
@@ -71,7 +71,7 @@ const CreateTimelapseButtons = ({
           );
         })
       ) : (
-        <Link to={frontendPath(`capture/${captureId}/createTimelapse`)}>
+        <Link to={frontendPath(`capture/${encode(captureId)}/createTimelapse`)}>
           <button>Create Timelapse</button>
         </Link>
       )}

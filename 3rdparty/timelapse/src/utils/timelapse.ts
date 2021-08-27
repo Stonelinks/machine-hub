@@ -1,11 +1,15 @@
 import { Interval } from "luxon";
 import * as fetch from "node-fetch";
+import * as fs from "fs";
 import * as shell from "shelljs";
+import * as getUuid from "uuid-by-string";
 import {
+  CACHE_FOLDER,
   CAPTURE_FOLDER,
   DEVICE_ID_NONE,
   TIMELAPSE_CHUNK_SIZE,
 } from "../common/constants";
+import { encode } from "../common/encode";
 import { MILLISECONDS_IN_MINUTE, MILLISECONDS_IN_SECOND } from "../common/time";
 import { slugifyDeviceId } from "../common/types";
 import {
@@ -15,16 +19,15 @@ import {
 import { deleteFile } from "../utils/files";
 import { cachedDownsize } from "../utils/images";
 import { getConfig, setConfigValue } from "./config";
-import { DEFAULT_INTERVAL_MS, localNow } from "./cron";
+import { DEFAULT_INTERVAL_MS, localNow, now } from "./cron";
 import { getFfmpeg } from "./ffmpeg";
 import { getChronologicalFileList, writeFileAsync } from "./files";
 import { fileIsGifOrMovie, fileIsImage } from "./images";
 import { stop, takeSnapshot } from "./videoDevices";
 
 export const getCaptureDir = async () => {
-  const captureDir = `${CAPTURE_FOLDER}`;
-  shell.mkdir("-p", captureDir);
-  return captureDir;
+  shell.mkdir("-p", CAPTURE_FOLDER);
+  return CAPTURE_FOLDER;
 };
 
 export const getActiveCaptureDir = async () => {
@@ -142,7 +145,7 @@ export const CaptureCronJob = {
 
 export const CameraStreamTimeoutCronJob = {
   name: "camera stream timeout",
-  intervalMs: 2 * MILLISECONDS_IN_MINUTE,
+  intervalMs: MILLISECONDS_IN_MINUTE,
   fn: async () => {
     const c = await getConfig();
     // tslint:disable-next-line:prefer-for-of
@@ -196,32 +199,31 @@ export const CameraStreamTimeoutCronJob = {
 // };
 
 interface MakeTimelapseVideoOpts {
-  nowMs: number;
   files: string[];
   outPath: string;
   delayMs: string;
   log: (s: string) => void;
-  end: () => void;
 }
 
-interface MakeTimelapseVideoChunkOpts extends MakeTimelapseVideoOpts {
-  chunkIndex: number;
-  singleChunk: boolean;
-}
+const makeCacheKeyForChunk = (
+  delayMs: MakeTimelapseVideoOpts["delayMs"],
+  files: MakeTimelapseVideoOpts["files"],
+) => {
+  return getUuid(`${encode(delayMs)}-${files.map(encode).join("-")}`);
+};
 
-export const makeTimelapseVideoChunk = async ({
-  chunkIndex,
-  singleChunk,
-  nowMs,
-  files,
-  log,
-  end,
-  outPath,
-  delayMs,
-}: MakeTimelapseVideoChunkOpts) => {
-  const fileListPath = singleChunk
-    ? `/tmp/timelapse-out-${nowMs}.txt`
-    : `/tmp/timelapse-out-${nowMs}-chunk${chunkIndex}.txt`;
+const getTimelapseChunkCacheFolder = () => {
+  const cacheBaseDir = `${CACHE_FOLDER}/timelapse_chunks`;
+  shell.mkdir("-p", cacheBaseDir);
+  return cacheBaseDir;
+};
+
+export const makeTimelapseVideoChunk = async (a: MakeTimelapseVideoOpts) => {
+  const { files, log, outPath, delayMs } = a;
+  const fileListPath = `/tmp/timelapse-out-${makeCacheKeyForChunk(
+    a.delayMs,
+    a.files,
+  )}.txt`;
 
   const delaySeconds = `${parseInt(delayMs, 10) / MILLISECONDS_IN_SECOND}`;
   let ffmpegInstructions = "";
@@ -241,42 +243,54 @@ export const makeTimelapseVideoChunk = async ({
   await writeFileAsync(fileListPath, ffmpegInstructions);
   log(`made a list of ${files.length} images to ${fileListPath}`);
 
-  getFfmpeg()
-    .addInput(fileListPath)
-    .inputOptions(["-f", "concat", "-safe", "0"])
-    .videoCodec("libx264")
-    .noAudio()
-    .on("start", command => {
-      log("ffmpeg process started: " + command);
-    })
-    .on("progress", progress => {
-      log("processing: " + progress.percent + "% done");
-    })
-    .on("error", (err, stdout, stderr) => {
-      log("Error: " + err);
-      log("ffmpeg stderr: " + stderr);
+  return new Promise<void>(async (res, rej) => {
+    await getFfmpeg()
+      .addInput(fileListPath)
+      .inputOptions(["-f", "concat", "-safe", "0"])
+      .videoCodec("libx264")
+      .noAudio()
+      .on("start", command => {
+        log("ffmpeg process started: " + command);
+      })
+      .on("progress", progress => {
+        log("processing: " + progress.percent + "% done");
+      })
+      .on("error", (err, stdout, stderr) => {
+        log("Error: " + err);
+        log("ffmpeg stderr: " + stderr);
 
-      setTimeout(() => {
-        end();
-      }, MILLISECONDS_IN_MINUTE / 2);
-    })
-    .on("end", async () => {
-      log("video created in: " + outPath);
-      log("done!");
-      if (singleChunk) {
-        log("you should be automatically redirected");
-      }
-      await deleteFile(fileListPath);
-      end();
-    })
-    .save(outPath);
+        setTimeout(() => {
+          rej(err);
+        }, MILLISECONDS_IN_MINUTE / 2);
+      })
+      .on("end", async () => {
+        log("video created in: " + outPath);
+        log("done!");
+        await deleteFile(fileListPath);
+        res();
+      })
+      .save(outPath);
+  });
+};
+
+export const cachedMakeTimelapseVideoChunk = async ({
+  files,
+  log,
+  outPath,
+  delayMs,
+}: MakeTimelapseVideoOpts) => {
+  await getTimelapseChunkCacheFolder();
+
+  if (!fs.existsSync(outPath)) {
+    await makeTimelapseVideoChunk({ files, log, outPath, delayMs });
+  } else {
+    log(`cache hit for chunk at ${outPath}`);
+  }
 };
 
 export const makeTimelapseVideo = async ({
-  nowMs,
   files,
   log,
-  end,
   outPath,
   delayMs,
 }: MakeTimelapseVideoOpts) => {
@@ -284,29 +298,15 @@ export const makeTimelapseVideo = async ({
     if (files.length < TIMELAPSE_CHUNK_SIZE) {
       log("processing a single chunk");
       await makeTimelapseVideoChunk({
-        singleChunk: true,
-        chunkIndex: 0,
-        nowMs,
         files,
         log,
-        end,
         outPath,
         delayMs,
       });
     } else {
       log("generating chunks...");
-      const baseOutPath = outPath
-        .split(".")
-        .slice(0, -1)
-        .join(".");
       const chunkInputFiles = [[]];
-      const chunkOutputFiles = [];
       let chunkIndex = 0;
-
-      const addChunkOutputFile = () => {
-        chunkOutputFiles.push(`${baseOutPath}.chunk${chunkIndex}.mp4`);
-      };
-      addChunkOutputFile();
 
       // tslint:disable-next-line:prefer-for-of
       for (let i = 0; i < files.length; i++) {
@@ -314,13 +314,19 @@ export const makeTimelapseVideo = async ({
 
         if (chunkInputFiles[chunkIndex].length >= TIMELAPSE_CHUNK_SIZE) {
           chunkIndex++;
-          addChunkOutputFile();
           log(`creating empty chunk ${chunkIndex}`);
           chunkInputFiles[chunkIndex] = [];
         }
 
         chunkInputFiles[chunkIndex].push(file);
       }
+
+      const chunkOutputFiles = chunkInputFiles.map(f => {
+        return `${getTimelapseChunkCacheFolder()}/${makeCacheKeyForChunk(
+          delayMs,
+          f,
+        )}.mp4`;
+      });
 
       let chunkConcatFfmpegInstructions = "";
       const delaySeconds = `${parseInt(delayMs, 10) / MILLISECONDS_IN_SECOND}`;
@@ -332,20 +338,13 @@ export const makeTimelapseVideo = async ({
         const chunkOutputPath = chunkOutputFiles[i];
         log(`begin chunk ${i}`);
 
-        const buildChunkPromise = new Promise<void>(async (res, rej) => {
-          await makeTimelapseVideoChunk({
-            singleChunk: false,
-            chunkIndex: i,
-            nowMs,
-            files: chunkInputs,
-            log,
-            end: res,
-            outPath: chunkOutputPath,
-            delayMs,
-          });
+        await cachedMakeTimelapseVideoChunk({
+          files: chunkInputs,
+          log,
+          outPath: chunkOutputPath,
+          delayMs,
         });
 
-        await buildChunkPromise;
         log(`end chunk ${i}`);
 
         chunkConcatFfmpegInstructions += `file '${chunkOutputPath}'\n`;
@@ -357,44 +356,40 @@ export const makeTimelapseVideo = async ({
 
       log(`done all chunks, final concat`);
 
-      const chunkConcatListPath = `/tmp/timelapse-out-${nowMs}.txt`;
+      const chunkConcatListPath = `/tmp/timelapse-out-${now()}.txt`;
 
       await writeFileAsync(chunkConcatListPath, chunkConcatFfmpegInstructions);
       log(`made a list of chunks to ${chunkConcatListPath}`);
 
-      getFfmpeg()
-        .addInput(chunkConcatListPath)
-        .inputOptions(["-f", "concat", "-safe", "0"])
-        .videoCodec("libx264")
-        .noAudio()
-        .on("start", command => {
-          log(`ffmpeg process started: ${command}`);
-        })
-        .on("progress", progress => {
-          log(`processing: ${progress.percent}% done`);
-        })
-        .on("error", (err, stdout, stderr) => {
-          log(`Error: ${err}`);
-          log(`ffmpeg stderr: ${stderr}`);
+      return new Promise<void>(async (res, rej) => {
+        await getFfmpeg()
+          .addInput(chunkConcatListPath)
+          .inputOptions(["-f", "concat", "-safe", "0"])
+          .videoCodec("libx264")
+          .noAudio()
+          .on("start", command => {
+            log(`ffmpeg process started: ${command}`);
+          })
+          .on("progress", progress => {
+            log(`processing: ${progress.percent}% done`);
+          })
+          .on("error", (err, stdout, stderr) => {
+            log(`Error: ${err}`);
+            log(`ffmpeg stderr: ${stderr}`);
 
-          setTimeout(() => {
-            end();
-          }, MILLISECONDS_IN_MINUTE / 2);
-        })
-        .on("end", async () => {
-          log(`video created in: ${outPath}`);
-          log("done! you should be automatically redirected");
-          await deleteFile(chunkConcatListPath);
+            setTimeout(() => {
+              rej(err);
+            }, MILLISECONDS_IN_MINUTE / 2);
+          })
+          .on("end", async () => {
+            log(`video created in: ${outPath}`);
+            log("done! you should be automatically redirected");
+            await deleteFile(chunkConcatListPath);
 
-          // tslint:disable-next-line:prefer-for-of
-          for (let i = 0; i < chunkOutputFiles.length; i++) {
-            const chunkOutputPath = chunkOutputFiles[i];
-            await deleteFile(chunkOutputPath);
-          }
-
-          end();
-        })
-        .save(outPath);
+            res();
+          })
+          .save(outPath);
+      });
     }
   } catch (e) {
     log(`problem making timelapse!`);

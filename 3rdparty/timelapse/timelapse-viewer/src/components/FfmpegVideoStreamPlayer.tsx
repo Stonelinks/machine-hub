@@ -1,20 +1,18 @@
-import _ from "lodash";
+import JMuxer from "jmuxer";
 import React from "react";
-import { MILLISECONDS_IN_SECOND } from "../common/time";
+import {
+  VIDEO_FPS,
+  VIDEO_STREAM_HEIGHT,
+  VIDEO_STREAM_WIDTH,
+} from "../common/constants";
+import { encode } from "../common/encode";
 import {
   AllVideoWebSocketMsgs,
   VideoWebSocketMsg,
   VideoWebSocketMsgTypes,
 } from "../common/types";
-import { encode } from "../common/encode";
 import { WS_BASE_URL } from "../utils/api";
 import VideoDeviceControl from "./VideoDeviceControl";
-import JMuxer from "jmuxer";
-import {
-  VIDEO_FPS,
-  VIDEO_STREAM_WIDTH,
-  VIDEO_STREAM_HEIGHT,
-} from "../common/constants";
 
 interface Props {
   deviceId: string;
@@ -30,7 +28,7 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
     this.getSocket().close();
   }
 
-  componentDidMount = _.debounce(() => {
+  componentDidMount = () => {
     window.addEventListener("focus", this.onFocus);
     window.addEventListener("blur", this.onBlur);
 
@@ -69,7 +67,7 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
     socket.addEventListener("error", e => {
       console.log("Socket Error", e);
     });
-  }, MILLISECONDS_IN_SECOND);
+  };
 
   sendMessage = (m: AllVideoWebSocketMsgs) => {
     console.log(`FfmpegVideoStreamPlayer sending ${m.type}`);
@@ -90,8 +88,8 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
     return `player-${encode(this.props.deviceId)}`;
   };
 
-  getVideoUrl = () => {
-    return `${WS_BASE_URL}/stream/${encode(this.props.deviceId)}/ffmpeg.ws`;
+  getWsUrl = () => {
+    return `${WS_BASE_URL}/stream/${encode(this.props.deviceId)}/ws`;
   };
 
   vid: HTMLVideoElement | null = null;
@@ -135,7 +133,7 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props> {
   socket?: WebSocket;
   getSocket = (): WebSocket => {
     if (!this.socket) {
-      this.socket = new WebSocket(this.getVideoUrl());
+      this.socket = new WebSocket(this.getWsUrl());
       this.socket.binaryType = "arraybuffer";
     }
     return this.socket;

@@ -54,9 +54,7 @@ const AllVideoDeviceSnapshotViewer = ({
               >
                 <Link to={frontendPath(`stream/${encode(deviceId)}`)}>
                   <img
-                    src={`${HTTP_BASE_URL}/video-device/${encode(
-                      deviceId,
-                    )}/snapshot.jpg`}
+                    src={`${HTTP_BASE_URL}/stream/${encode(deviceId)}/snapshot`}
                     style={{
                       width: "auto",
                       height: "auto",

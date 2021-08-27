@@ -84,7 +84,7 @@ const App = () => {
                     <h2>Please wait...</h2>
                     <p>You will be automatically redirected</p>
                     <CreateTimelapsePage
-                      captureId={captureId}
+                      captureId={decode(captureId)}
                       deviceId={decode(deviceId)}
                     />
                   </div>
@@ -96,7 +96,7 @@ const App = () => {
                   <div>
                     <h2>Please wait...</h2>
                     <p>You will be automatically redirected</p>
-                    <CreateTimelapsePage captureId={captureId} />
+                    <CreateTimelapsePage captureId={decode(captureId)} />
                   </div>
                 )}
               </Match>
@@ -104,9 +104,9 @@ const App = () => {
               <Match path={frontendPath("capture/:captureId")}>
                 {({ captureId }: { captureId: string }) => (
                   <div>
-                    <CreateTimelapseButtons captureId={captureId} />
-                    <ResultsFileList captureId={captureId} />
-                    <CaptureFileList captureId={captureId} />
+                    <CreateTimelapseButtons captureId={decode(captureId)} />
+                    <ResultsFileList captureId={decode(captureId)} />
+                    <CaptureFileList captureId={decode(captureId)} />
                   </div>
                 )}
               </Match>

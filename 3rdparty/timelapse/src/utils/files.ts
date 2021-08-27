@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as del from "del";
 import * as path from "path";
 import { promisify } from "util";
 import { JsonSerializable } from "../common/json";
@@ -38,6 +39,9 @@ export const listDirectory = promisify(fs.readdir);
 export const stat = promisify(fs.stat);
 
 export const deleteFile = promisify(fs.unlink);
+export const deleteDir = async (p: string) => {
+  await del(p);
+};
 
 export const getChronologicalFileList = async (
   dirPath: string,
@@ -67,6 +71,10 @@ export const getChronologicalFileList = async (
 };
 
 export const recursivelyListDir = async (dirPath: string) => {
+  if (!fs.existsSync(dirPath)) {
+    return [];
+  }
+
   async function* walk(dir) {
     for await (const d of await fs.promises.opendir(dir)) {
       const entry = path.join(dir, d.name);

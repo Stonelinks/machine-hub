@@ -78,8 +78,6 @@ export const registerTimelapseRoutes = async (app: Application) => {
       res.write(`${s}\n`);
     };
 
-    const end = () => res.end();
-
     res.writeHead(200, { "Content-Type": "text/plain" });
     log("begin timelapse creation");
 
@@ -90,14 +88,19 @@ export const registerTimelapseRoutes = async (app: Application) => {
     const nowMs = now();
     const outPath = `${thisCaptureDir}/out-${nowMs}.mp4`;
 
-    await makeTimelapseVideo({
-      nowMs,
-      files,
-      log,
-      end,
-      outPath,
-      delayMs,
-    });
+    try {
+      await makeTimelapseVideo({
+        // nowMs,
+        files,
+        log,
+        outPath,
+        delayMs,
+      });
+    } catch (e) {
+      log(e);
+      res.end();
+    }
+    res.end();
   });
 
   app.get(
@@ -113,8 +116,6 @@ export const registerTimelapseRoutes = async (app: Application) => {
         res.write(`${s}\n`);
       };
 
-      const end = () => res.end();
-
       res.writeHead(200, { "Content-Type": "text/plain" });
       log("begin timelapse creation for " + deviceId);
 
@@ -129,14 +130,19 @@ export const registerTimelapseRoutes = async (app: Application) => {
       const nowMs = now();
       const outPath = `${thisCaptureDir}/out-${deviceIdSlug}-${nowMs}.mp4`;
 
-      await makeTimelapseVideo({
-        nowMs,
-        files,
-        log,
-        end,
-        outPath,
-        delayMs,
-      });
+      try {
+        await makeTimelapseVideo({
+          // nowMs,
+          files,
+          log,
+          outPath,
+          delayMs,
+        });
+      } catch (e) {
+        log(e);
+        res.end();
+      }
+      res.end();
     },
   );
 };

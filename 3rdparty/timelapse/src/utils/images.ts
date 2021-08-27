@@ -8,7 +8,6 @@ import {
   THUMBS_FOLDER_NAME,
 } from "../common/constants";
 import { encode } from "../common/encode";
-import { makeCachedFn } from "./cache";
 
 export const getSize = async (fullPath: string) => {
   const imageInfo = await sharp(fullPath).metadata();
@@ -32,9 +31,7 @@ export const getThumbnail = async (imageFilePath: string) => {
     return thumbImagePath;
   }
 
-  if (!fs.existsSync(thumbsFolder)) {
-    shell.mkdir("-p", thumbsFolder);
-  }
+  shell.mkdir("-p", thumbsFolder);
 
   await downSize(fullImagePath, thumbImagePath, 1 / 3);
 
@@ -58,23 +55,23 @@ export const downSize = async (
   return outputImageFilePath;
 };
 
-export const cachedDownsize = makeCachedFn(
-  "cachedDownsize",
-  async (inputFile, downSizeAmount: number = 0.5) => {
-    const downsizeCacheBaseDir = `${CACHE_FOLDER}/downsizes`;
-    if (!fs.existsSync(downsizeCacheBaseDir)) {
-      shell.mkdir("-p", downsizeCacheBaseDir);
-    }
+export const cachedDownsize = async (
+  inputFile,
+  downSizeAmount: number = 0.5,
+) => {
+  const cacheBaseDir = `${CACHE_FOLDER}/downsizes`;
+  shell.mkdir("-p", cacheBaseDir);
 
-    const outputFile = `${downsizeCacheBaseDir}/${encode(inputFile)}-${encode(
-      downSizeAmount.toString(),
-    )}.png`;
+  const outputFile = `${cacheBaseDir}/${encode(inputFile)}-${encode(
+    downSizeAmount.toString(),
+  )}.png`;
 
+  if (!fs.existsSync(outputFile)) {
     await downSize(inputFile, outputFile, downSizeAmount);
+  }
 
-    return outputFile;
-  },
-);
+  return outputFile;
+};
 
 export const fileIsImage = (f: string) =>
   f.toLowerCase().endsWith("jpg") ||
