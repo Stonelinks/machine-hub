@@ -1,37 +1,42 @@
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { RootState } from "../redux";
-import { HTTP_BASE_URL, fillInUrlTemplate } from "../utils/api";
+import { HTTP_BASE_URL, fillInUrlTemplate, WS_BASE_URL } from "../utils/api";
 import { MILLISECONDS_IN_SECOND } from "../common/time";
 import { frontendPath, navigate } from "../utils/url";
 import { encode } from "../common/encode";
 
-const mapState = (state: RootState) => ({});
-
-const mapDispatch = {};
-
-const connector = connect(mapState, mapDispatch);
-
-type PropsFromRedux = ConnectedProps<typeof connector>;
-
-interface OwnProps {
+interface Props {
   captureId: string;
   deviceId?: string;
 }
 
-type Props = PropsFromRedux & OwnProps;
+interface State {
+  log: string;
+}
 
-const CreateTimelapsePage = ({ captureId, deviceId }: Props) => {
-  const [response, setResponse] = React.useState(
-    `Timelapse creation log for ${captureId}${
-      deviceId ? " captured with " + deviceId : ""
-    }`,
-  );
+export default class CreateTimelapsePage extends React.Component<Props, State> {
+  socket?: WebSocket;
+  constructor(props: Props) {
+    super(props);
+    const { captureId, deviceId } = props;
+    this.state = {
+      log: `Timelapse creation log for ${captureId}${
+        deviceId ? " captured with " + deviceId : ""
+      }`,
+    };
+  }
 
-  React.useEffect(() => {
+  appendLog = (m: string) => {
+    this.setState({ log: this.state.log + "\n" + m });
+    window.scrollTo(0, document.body.scrollHeight);
+  };
+
+  componentDidMount() {
+    const { captureId, deviceId } = this.props;
     const delayMs = window.prompt("Enter frame delay (ms)", "1000");
 
-    let urlTemplate = `${HTTP_BASE_URL}/timelapse/capture/:captureId/create/:delayMs`;
+    let urlTemplate = `${WS_BASE_URL}/timelapse/capture/:captureId/create/:delayMs`;
     if (deviceId) {
       urlTemplate += `/device/:deviceId`;
     }
@@ -41,24 +46,30 @@ const CreateTimelapsePage = ({ captureId, deviceId }: Props) => {
       deviceId,
     });
 
-    const xhr = new XMLHttpRequest();
-    xhr.responseType = "text";
+    this.socket = new WebSocket(url);
 
-    xhr.onload = () => {
-      setResponse(xhr.response);
+    this.socket.addEventListener("message", event => {
+      this.appendLog(event.data);
+    });
+
+    this.socket.addEventListener("error", e => {
+      this.appendLog("Socket Error: " + e);
+    });
+
+    this.socket.addEventListener("close", e => {
+      this.appendLog("closed");
+
       setTimeout(() => {
         navigate(frontendPath(`capture/${encode(captureId)}`));
       }, 2 * MILLISECONDS_IN_SECOND);
-    };
-    xhr.onprogress = () => {
-      setResponse(xhr.response);
-    };
+    });
+  }
 
-    xhr.open("GET", url, true);
-    xhr.send();
-  }, [setResponse, captureId, deviceId]);
+  componentWillUnmount() {
+    this.socket?.close();
+  }
 
-  return <pre style={{ whiteSpace: "pre-wrap" }}>{response}</pre>;
-};
-
-export default CreateTimelapsePage;
+  render() {
+    return <pre style={{ whiteSpace: "pre-wrap" }}>{this.state.log}</pre>;
+  }
+}

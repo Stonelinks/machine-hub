@@ -68,17 +68,16 @@ export const registerTimelapseRoutes = async (app: Application) => {
     res.send(JSON.stringify(files.map(f => `${captureId}/${f}`)));
   });
 
-  app.get("/timelapse/capture/:captureId/create/:delayMs", async (req, res) => {
+  app.ws("/timelapse/capture/:captureId/create/:delayMs", async (ws, req) => {
     const captureDir = await getCaptureDir();
     const captureId = decode(req.params.captureId);
     const delayMs = decode(req.params.delayMs);
 
-    const log = (s: string) => {
-      console.log(s);
-      res.write(`${s}\n`);
+    const log = (m: string) => {
+      console.log(`ws send ${m}`);
+      ws.send(m);
     };
 
-    res.writeHead(200, { "Content-Type": "text/plain" });
     log("begin timelapse creation");
 
     const thisCaptureDir = `${captureDir}/${captureId}`;
@@ -90,7 +89,6 @@ export const registerTimelapseRoutes = async (app: Application) => {
 
     try {
       await makeTimelapseVideo({
-        // nowMs,
         files,
         log,
         outPath,
@@ -98,25 +96,24 @@ export const registerTimelapseRoutes = async (app: Application) => {
       });
     } catch (e) {
       log(e);
-      res.end();
+      ws.close();
     }
-    res.end();
+    ws.close();
   });
 
-  app.get(
+  app.ws(
     "/timelapse/capture/:captureId/create/:delayMs/device/:deviceId",
-    async (req, res) => {
+    async (ws, req) => {
       const captureDir = await getCaptureDir();
       const captureId = decode(req.params.captureId);
       const deviceId = decode(req.params.deviceId);
       const delayMs = decode(req.params.delayMs);
 
-      const log = (s: string) => {
-        console.log(s);
-        res.write(`${s}\n`);
+      const log = (m: string) => {
+        console.log(`ws send ${m}`);
+        ws.send(m);
       };
 
-      res.writeHead(200, { "Content-Type": "text/plain" });
       log("begin timelapse creation for " + deviceId);
 
       const thisCaptureDir = `${captureDir}/${captureId}`;
@@ -132,7 +129,6 @@ export const registerTimelapseRoutes = async (app: Application) => {
 
       try {
         await makeTimelapseVideo({
-          // nowMs,
           files,
           log,
           outPath,
@@ -140,9 +136,9 @@ export const registerTimelapseRoutes = async (app: Application) => {
         });
       } catch (e) {
         log(e);
-        res.end();
+        ws.close();
       }
-      res.end();
+      ws.close();
     },
   );
 };

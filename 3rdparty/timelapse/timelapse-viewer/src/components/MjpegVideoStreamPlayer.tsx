@@ -1,10 +1,6 @@
 import JMuxer from "jmuxer";
 import React from "react";
-import {
-  VIDEO_FPS,
-  VIDEO_STREAM_HEIGHT,
-  VIDEO_STREAM_WIDTH,
-} from "../common/constants";
+import { VIDEO_STREAM_HEIGHT, VIDEO_STREAM_WIDTH } from "../common/constants";
 import { encode } from "../common/encode";
 import {
   AllVideoWebSocketMsgs,
