@@ -18,7 +18,7 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     cap_add:
       - SYS_RAWIO
-    ports:
+    expose:
       - "8000"
     volumes:
       - "cnc-config:/config"
@@ -35,9 +35,18 @@ services:
     expose:
       - "4000"
 
-  proxy:
-    build: ./haproxy
+  # haproxy:
+  #   build: ./haproxy
+  #   depends_on:
+  #     - timelapse
+  #   ports:
+  #     - "80:80"
+
+  nginx:
+    build: ./nginx
     depends_on:
       - timelapse
+      - cncjs
+      - frontend
     ports:
       - "80:80"
