@@ -11,7 +11,7 @@ services:
       - "80"
 
   cncjs:
-    build: ./3rdparty/balena-cncjs/cncjs
+    build: ./cncjs
     # Add additional devices to this list if required.
     devices:
       - "/dev/ttyAMA0:/dev/ttyAMA0"
@@ -31,7 +31,7 @@ services:
     environment:
       - SERVER_PORT=4000
       - BASE_PATH=/capture
-      - PUBLIC_URL=/timelapse
+      # - PUBLIC_URL=/timelapse
     expose:
       - "4000"
 
