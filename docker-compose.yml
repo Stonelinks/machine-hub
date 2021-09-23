@@ -31,7 +31,7 @@ services:
     environment:
       - SERVER_PORT=4000
       - BASE_PATH=/capture
-      # - PUBLIC_URL=/timelapse
+      - PUBLIC_URL=/timelapse
     expose:
       - "4000"
 
