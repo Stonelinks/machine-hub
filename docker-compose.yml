@@ -35,18 +35,20 @@ services:
     expose:
       - "4000"
 
-  # haproxy:
-  #   build: ./haproxy
-  #   depends_on:
-  #     - timelapse
-  #   ports:
-  #     - "80:80"
-
-  nginx:
-    build: ./nginx
+  haproxy:
+    build: ./haproxy
     depends_on:
       - timelapse
       - cncjs
       - frontend
     ports:
       - "80:80"
+
+  # nginx:
+  #   build: ./nginx
+  #   depends_on:
+  #     - timelapse
+  #     - cncjs
+  #     - frontend
+  #   ports:
+  #     - "80:80"
