@@ -1,19 +1,19 @@
-import * as path from "path";
 import * as bodyParser from "body-parser";
 import * as cors from "cors";
-import * as url from "url";
 import * as express from "express";
-import { SERVER_PORT, VIEWER_FOLDER, CAPTURE_FOLDER } from "./common/constants";
+import * as expressWs from "express-ws";
+import * as path from "path";
+import * as url from "url";
+import { CAPTURE_FOLDER, SERVER_PORT, VIEWER_FOLDER } from "./common/constants";
+import { decode } from "./common/encode";
+import { registerConfigRoutes } from "./routes/config";
+import { streamingRoutes } from "./routes/streaming";
+import { registerTimelapseRoutes } from "./routes/timelapse";
+import { registerVideoDeviceRoutes } from "./routes/videoDevices";
 import { initConfig } from "./utils/config";
 import { cron } from "./utils/cron";
-import { registerVideoDeviceRoutes } from "./routes/videoDevices";
-import { registerConfigRoutes } from "./routes/config";
-import { registerTimelapseRoutes } from "./routes/timelapse";
+import { deleteDir, deleteFile } from "./utils/files";
 import { getThumbnail } from "./utils/images";
-import { decode } from "./common/encode";
-import * as expressWs from "express-ws";
-import { streamingRoutes } from "./routes/streaming";
-import { deleteDir, deleteFile, listDirectory } from "./utils/files";
 
 const app = (express() as unknown) as expressWs.Application;
 

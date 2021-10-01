@@ -27,3 +27,12 @@ export const TIMELAPSE_CHUNK_SIZE = 100;
 
 export const WS_PING_INTERVAL_MS = 10 * MILLISECONDS_IN_SECOND;
 export const WS_COMPRESSION_ENABLED = true;
+
+// somehow, intentionally setting this low really reduces latency for mjpeg streams
+export const REMOTE_VIDEO_FPS = 5;
+export const REMOTE_SNAPSHOT_PATH = `/snapshot`;
+export const REMOTE_MJPEG_STREAM_PATH = `/mjpeg`;
+
+export const ENABLE_REMOTE_RTSP = false;
+export const REMOTE_RTSP_PORT = 8554;
+export const REMOTE_RTSP_STREAM_PATH = `:${REMOTE_RTSP_PORT}/mjpeg/1`;

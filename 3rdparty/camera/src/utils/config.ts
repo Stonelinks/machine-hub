@@ -1,9 +1,9 @@
 import * as fs from "fs";
 import { CONFIG_FILE } from "../common/constants";
 import {
+  MILLISECONDS_IN_MINUTE,
   MILLISECONDS_IN_SECOND,
   timeout,
-  MILLISECONDS_IN_MINUTE,
 } from "../common/time";
 import { Config } from "../common/types";
 import { readJsonAsync, writeJsonAsync } from "./files";

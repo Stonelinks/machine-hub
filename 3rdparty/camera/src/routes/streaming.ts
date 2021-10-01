@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
-import * as request from "request";
 import { Application } from "express-ws";
 import { FfmpegCommand } from "fluent-ffmpeg";
 import { deflateRaw } from "pako";
 import { Readable, Writable } from "stream";
 import {
-  VIDEO_FPS,
+  ENABLE_REMOTE_RTSP,
+  REMOTE_VIDEO_FPS,
   VIDEO_STREAM_HEIGHT,
   VIDEO_STREAM_WIDTH,
   WS_COMPRESSION_ENABLED,
@@ -13,14 +13,13 @@ import {
 } from "../common/constants";
 import {
   isLocalDevice,
-  remoteDeviceIdToJpegSnapshotUrl,
   remoteDeviceIdToMjpegStreamUrl,
+  remoteDeviceIdToRtspStreamUrl,
 } from "../common/devices";
 import { decode } from "../common/encode";
 import {
   AllVideoWebSocketMsgs,
   AnyDeviceId,
-  LocalDeviceId,
   VideoStreamTypes,
   VideoWebSocketMsgTypes,
 } from "../common/types";
@@ -153,8 +152,10 @@ const startFfmpegStreamer = async (deviceId: AnyDeviceId) => {
   }
 
   let cam;
-  let fps = VIDEO_FPS;
+  let fps = REMOTE_VIDEO_FPS;
   let input: any;
+  let inputFormat = "mjpeg";
+  let extraInputOptions = [];
   if (isLocalDevice(deviceId)) {
     await start(deviceId);
     cam = getOrCreateCameraDevice(deviceId);
@@ -167,14 +168,21 @@ const startFfmpegStreamer = async (deviceId: AnyDeviceId) => {
       },
     });
   } else {
-    input = remoteDeviceIdToMjpegStreamUrl(deviceId);
+    input = ENABLE_REMOTE_RTSP
+      ? remoteDeviceIdToRtspStreamUrl(deviceId)
+      : remoteDeviceIdToMjpegStreamUrl(deviceId);
+    if (ENABLE_REMOTE_RTSP) {
+      inputFormat = "rtsp";
+      extraInputOptions = ["-rtsp_transport udp"];
+    }
   }
 
   const streamFfmpegCommand = getFfmpeg({
     stdoutLines: 1,
   })
     .input(input)
-    .inputFormat("mjpeg")
+    .inputFormat(inputFormat)
+    .inputOptions(extraInputOptions)
     .inputFPS(fps)
     .noAudio()
     .videoCodec("libx264")

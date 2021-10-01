@@ -1,13 +1,13 @@
-import * as fs from "fs";
-import { timeout, MILLISECONDS_IN_SECOND } from "../common/time";
 import { EventEmitter } from "events";
-import { AnyDeviceId, LocalDeviceId } from "../common/types";
+import * as fs from "fs";
+import * as request from "request";
 import { VIDEO_FPS } from "../common/constants";
 import {
   isLocalDevice,
   remoteDeviceIdToJpegSnapshotUrl,
 } from "../common/devices";
-import * as request from "request";
+import { MILLISECONDS_IN_SECOND, timeout } from "../common/time";
+import { AnyDeviceId, LocalDeviceId } from "../common/types";
 
 // tslint:disable-next-line:no-var-requires
 const v4l2camera = require("v4l2camera");
@@ -206,9 +206,11 @@ export const start = async (deviceId: LocalDeviceId): Promise<void> => {
 
 export const stop = (deviceId: LocalDeviceId) => {
   console.log(`stop ${deviceId}`);
-  const { isOn } = getOrCreateCameraDevice(deviceId);
-  if (isOn) {
-    cameraDevices[deviceId].isOn = false;
+  if (isLocalDevice(deviceId)) {
+    const { isOn } = getOrCreateCameraDevice(deviceId);
+    if (isOn) {
+      cameraDevices[deviceId].isOn = false;
+    }
   }
 };
 

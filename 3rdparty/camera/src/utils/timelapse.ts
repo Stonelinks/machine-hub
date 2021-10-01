@@ -1,14 +1,14 @@
+import * as fs from "fs";
 import { Interval } from "luxon";
 import * as fetch from "node-fetch";
-import * as fs from "fs";
 import * as shell from "shelljs";
 import * as getUuid from "uuid-by-string";
 import {
   CACHE_FOLDER,
   CAPTURE_FOLDER,
-  LOCAL_DEVICE_ID_NONE,
   TIMELAPSE_CHUNK_SIZE,
 } from "../common/constants";
+import { isNullDeviceId } from "../common/devices";
 import { encode } from "../common/encode";
 import { MILLISECONDS_IN_MINUTE, MILLISECONDS_IN_SECOND } from "../common/time";
 import { slugifyDeviceId } from "../common/types";
@@ -24,7 +24,6 @@ import { getFfmpeg } from "./ffmpeg";
 import { getChronologicalFileList, writeFileAsync } from "./files";
 import { fileIsGifOrMovie, fileIsImage } from "./images";
 import { stop, takeSnapshot } from "./videoDevices";
-import { isNullDeviceId } from "../common/devices";
 
 export const getCaptureDir = async () => {
   shell.mkdir("-p", CAPTURE_FOLDER);

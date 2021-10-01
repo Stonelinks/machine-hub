@@ -1,5 +1,5 @@
-import * as fs from "fs";
 import * as del from "del";
+import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
 import { JsonSerializable } from "../common/json";
