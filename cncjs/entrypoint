@@ -2,7 +2,8 @@
 
 require('@babel/polyfill');
 
-const launchServer = require('/usr/src/app/dist/cncjs/server-cli').default;
+// const launchServer = require('/usr/src/app/dist/cncjs/server-cli').default;
+const launchServer = require('/usr/src/app/src/server-cli').default;
 
 launchServer().catch(err => {
   console.error('Error:', err);
