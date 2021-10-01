@@ -1,4 +1,4 @@
-version: "2"
+version: 2.1
 
 volumes:
   cnc-config:
@@ -8,32 +8,41 @@ services:
   frontend:
     build: ./frontend
     expose:
-      - "80"
+      - 80
+
+  # https://github.com/balenablocks/hostname
+  hostname:
+    image: balenablocks/hostname
+    restart: no
+    labels:
+      io.balena.features.supervisor-api: 1
+    environment:
+      SET_HOSTNAME: machine-hub
 
   cncjs:
     build: ./cncjs
     # Add additional devices to this list if required.
     devices:
-      - "/dev/ttyAMA0:/dev/ttyAMA0"
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
+      - /dev/ttyAMA0:/dev/ttyAMA0
+      - /dev/ttyUSB0:/dev/ttyUSB0
     cap_add:
       - SYS_RAWIO
     expose:
-      - "8000"
+      - 8000
     volumes:
-      - "cnc-config:/config"
+      - cnc-config:/config
 
   camserver:
     build: ./3rdparty/camera
     privileged: true
     volumes:
-      - "timelapse-config:/capture"
+      - timelapse-config:/capture
     environment:
       - SERVER_PORT=4000
       - BASE_PATH=/capture
       - PUBLIC_URL=/camserver
     expose:
-      - "4000"
+      - 4000
 
   haproxy:
     build: ./haproxy
@@ -42,4 +51,4 @@ services:
       - cncjs
       - frontend
     ports:
-      - "80:80"
+      - 80:80
