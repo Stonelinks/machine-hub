@@ -18,4 +18,4 @@ EXPOSE 8000
 
 RUN mkdir /config
 
-CMD /usr/src/app/entrypoint --controller Grbl -H 0.0.0.0 -p 8000 -c /config/cncrc
+CMD /usr/src/app/entrypoint --allow-remote-access --controller Grbl -H 0.0.0.0 -p 8000 -c /config/cncrc
