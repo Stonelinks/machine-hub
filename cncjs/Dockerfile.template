@@ -8,6 +8,8 @@ COPY webpack.config.production.env /usr/src/app/
 RUN npm install
 RUN npm run prebuild-prod
 
+RUN ls -ll /usr/src/app
+
 FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-node:10-buster
 
 COPY --from=build /usr/src/app /usr/src/app
