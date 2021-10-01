@@ -12,8 +12,6 @@ else
   esac
 fi
 
-direnv allow
-
 echo "Checking if we have node $NODE_VERSION."
 if [ ! -f opt/node$NODE_VERSION/bin/node ]; then
   NODE_DOWNLOAD_URL=https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-$OS-$ARCH.tar.gz
