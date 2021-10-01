@@ -3,7 +3,8 @@ FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-node:10-buster-build as build
 WORKDIR /usr/src/app
 
 COPY cncjs /usr/src/app
-# COPY webpack.config.production.env /usr/src/app/
+COPY webpack.config.production.env /usr/src/app/
+COPY entrypoint /usr/src/app/
 
 RUN npm install
 RUN npm run prebuild-prod
@@ -18,4 +19,4 @@ EXPOSE 8000
 
 RUN mkdir /config
 
-CMD /usr/src/app/bin/cncjs --controller Grbl -H 0.0.0.0 -p 8000 -c /config/cncrc
+CMD /usr/src/app/entrypoint --controller Grbl -H 0.0.0.0 -p 8000 -c /config/cncrc
