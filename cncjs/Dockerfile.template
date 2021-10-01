@@ -1,13 +1,18 @@
 FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-node:10-buster-build as build
 
-RUN npm install --unsafe-perm -g cncjs
+WORKDIR /usr/src/app
+
+COPY 3rdparty/cncjs /usr/src/app/
+
+RUN npm install
+RUN npm run prebuild-prod
 
 FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-node:10-buster
 
-COPY --from=build /usr/local /usr/local
+COPY --from=build /usr/src/app /usr/src/app
 
 EXPOSE 8000
 
 RUN mkdir /config
 
-CMD /usr/local/bin/cncjs --controller Grbl --allow-remote-access -H 0.0.0.0 -p 8000 -c /config/cncrc
+CMD /usr/src/app/bin/cncjs --controller Grbl -H 0.0.0.0 -p 8000 -c /config/cncrc
