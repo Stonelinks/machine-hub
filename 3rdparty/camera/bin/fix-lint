@@ -1,0 +1,22 @@
+#!/bin/bash
+set -ex
+
+find . \
+  -type f \
+  -name "*.ts" -o \
+  -name "*.tsx" -o \
+  -name "*.js" -o \
+  -name "*.jsx" -o \
+  -name "*.json" \
+  | grep -v "node_modules" \
+  | grep -v "opt" \
+  | grep -v "build" \
+  | grep -v "static" \
+  | xargs prettier --write 
+
+# tslint -c tslint.json '**/*.{ts,tsx}' -e '{opt,node_modules,*/node_modules}' --fix
+
+export FORCE_COLOR=0
+tslint -p . --fix
+cd camserver-viewer
+tslint -p . --fix

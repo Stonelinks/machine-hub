@@ -23,32 +23,23 @@ services:
     volumes:
       - "cnc-config:/config"
 
-  timelapse:
-    build: ./3rdparty/timelapse
+  camserver:
+    build: ./3rdparty/camera
     privileged: true
     volumes:
       - "timelapse-config:/capture"
     environment:
       - SERVER_PORT=4000
       - BASE_PATH=/capture
-      - PUBLIC_URL=/timelapse
+      - PUBLIC_URL=/camserver
     expose:
       - "4000"
 
   haproxy:
     build: ./haproxy
     depends_on:
-      - timelapse
+      - camserver
       - cncjs
       - frontend
     ports:
       - "80:80"
-
-  # nginx:
-  #   build: ./nginx
-  #   depends_on:
-  #     - timelapse
-  #     - cncjs
-  #     - frontend
-  #   ports:
-  #     - "80:80"
