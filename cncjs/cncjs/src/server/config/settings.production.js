@@ -18,7 +18,7 @@ export default {
     assets: {
         app: {
             routes: [ // with trailing slash
-                urljoin('/cncjs/', '/'),
+                urljoin(publicPath, '/'),
                 '/' // fallback
             ],
             path: path.resolve(__dirname, '..', '..', 'app'),
