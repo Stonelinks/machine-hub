@@ -58,7 +58,7 @@ module.exports = {
         path: path.resolve(__dirname, 'dist/cncjs/app'),
         chunkFilename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
         filename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
-        publicPath: publicPath
+        publicPath: "/cncjs/"
     },
     module: {
         rules: [

@@ -1,5 +1,5 @@
 diff --git a/cncjs/cncjs/src/server/config/settings.production.js b/cncjs/cncjs/src/server/config/settings.production.js
-index 872bbca..48fc8be 100644
+index 872bbca..8329010 100644
 --- a/cncjs/cncjs/src/server/config/settings.production.js
 +++ b/cncjs/cncjs/src/server/config/settings.production.js
 @@ -18,7 +18,7 @@ export default {
@@ -11,6 +11,15 @@ index 872bbca..48fc8be 100644
                  '/' // fallback
              ],
              path: path.resolve(__dirname, '..', '..', 'app'),
+@@ -29,7 +29,7 @@ export default {
+         enable: false, // disable backend service in production
+         host: 'localhost',
+         port: 80,
+-        route: 'api/'
++        route: 'cncjs/api/'
+     },
+     cluster: {
+         // note. node-inspector cannot debug child (forked) process
 diff --git a/cncjs/cncjs/webpack.config.production.js b/cncjs/cncjs/webpack.config.production.js
 index d124313..7baa469 100644
 --- a/cncjs/cncjs/webpack.config.production.js
