@@ -49,8 +49,19 @@ services:
     ports:
       - 4000
 
-  haproxy:
-    build: ./haproxy
+  # haproxy:
+  #   build: ./haproxy
+  #   privileged: true
+  #   network_mode: host
+  #   depends_on:
+  #     - camserver
+  #     - cncjs
+  #     - frontend
+  #   ports:
+  #     - 80
+
+  nginx:
+    build: ./nginx
     privileged: true
     network_mode: host
     depends_on:
