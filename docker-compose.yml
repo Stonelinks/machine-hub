@@ -8,7 +8,7 @@ services:
   frontend:
     build: ./frontend
     expose:
-      - 80
+      - 8081
 
   # https://github.com/balenablocks/hostname
   hostname:
