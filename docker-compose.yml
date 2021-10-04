@@ -22,6 +22,8 @@ services:
   cncjs:
     build: ./cncjs
     # Add additional devices to this list if required.
+    privileged: true
+    network_mode: host
     devices:
       - /dev/ttyAMA0:/dev/ttyAMA0
       - /dev/ttyUSB0:/dev/ttyUSB0
@@ -35,6 +37,7 @@ services:
   camserver:
     build: ./3rdparty/camera
     privileged: true
+    network_mode: host
     volumes:
       - timelapse-config:/capture
     environment:
@@ -46,9 +49,11 @@ services:
 
   haproxy:
     build: ./haproxy
+    privileged: true
+    network_mode: host
     depends_on:
       - camserver
       - cncjs
       - frontend
     ports:
-      - 80:80
+      - 80
