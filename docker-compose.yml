@@ -78,5 +78,5 @@ services:
   #     - frontend
   #   expose:
   #     - 80
-  ports   expose:
+  # ports   expose:
   #     - 80
