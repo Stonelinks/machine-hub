@@ -2,11 +2,12 @@ import React from "react";
 import { connect, ConnectedProps } from "react-redux";
 import {
   LOCAL_DEVICE_ID_NONE,
-  REMOTE_DEVICE_ID_NONE,
+  REMOTE_MJPEG_DEVICE_ID_NONE,
+  REMOTE_WS_PROXY_DEVICE_ID_NONE,
 } from "../common/constants";
-import { isLocalDevice } from "../common/devices";
+import { getDeviceIdType } from "../common/devices";
 import { nothing } from "../common/nothing";
-import { Config } from "../common/types";
+import { Config, DeviceIdType } from "../common/types";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
 import { reload } from "../utils/url";
@@ -186,28 +187,43 @@ const ConfigEditor = ({
       <div>
         {captureDevices.length ? (
           captureDevices.map((deviceId, index) => {
+            const deviceIdType = getDeviceIdType(deviceId);
+            let ConfigEl = null;
+            switch (deviceIdType) {
+              case DeviceIdType.LocalDeviceId:
+                ConfigEl = (
+                  <LocalDeviceConfigSelector
+                    displayText={`Capture device ${index + 1}`}
+                    configValue={deviceId}
+                    onHandleChange={newDeviceId => {
+                      captureDevices[index] = newDeviceId;
+                      onSetCaptureDevicesConfigValue(captureDevices);
+                    }}
+                  />
+                );
+                break;
+              case DeviceIdType.RemoteMjpegDeviceUrl:
+              case DeviceIdType.RemoteWsDeviceUrl:
+                ConfigEl = (
+                  <RemoteDeviceConfigInput
+                    displayText={`Capture device ${index + 1}`}
+                    configValue={deviceId}
+                    onHandleChange={newDeviceId => {
+                      captureDevices[index] = newDeviceId;
+                      onSetCaptureDevicesConfigValue(captureDevices);
+                    }}
+                  />
+                );
+                break;
+              default:
+                ConfigEl = null;
+                break;
+            }
+
             return (
               <>
                 <div>
-                  {isLocalDevice(deviceId) ? (
-                    <LocalDeviceConfigSelector
-                      displayText={`Capture device ${index + 1}`}
-                      configValue={deviceId}
-                      onHandleChange={newDeviceId => {
-                        captureDevices[index] = newDeviceId;
-                        onSetCaptureDevicesConfigValue(captureDevices);
-                      }}
-                    />
-                  ) : (
-                    <RemoteDeviceConfigInput
-                      displayText={`Capture device ${index + 1}`}
-                      configValue={deviceId}
-                      onHandleChange={newDeviceId => {
-                        captureDevices[index] = newDeviceId;
-                        onSetCaptureDevicesConfigValue(captureDevices);
-                      }}
-                    />
-                  )}
+                  {ConfigEl}
                   <button
                     style={{ marginLeft: "10px" }}
                     onClick={async () => {
@@ -234,12 +250,21 @@ const ConfigEditor = ({
         </button>
         <button
           onClick={async () => {
-            captureDevices.push(REMOTE_DEVICE_ID_NONE);
+            captureDevices.push(REMOTE_MJPEG_DEVICE_ID_NONE);
             await onSetCaptureDevicesConfigValue(captureDevices);
             reload();
           }}
         >
-          Add device url
+          Add mjpeg url
+        </button>
+        <button
+          onClick={async () => {
+            captureDevices.push(REMOTE_WS_PROXY_DEVICE_ID_NONE);
+            await onSetCaptureDevicesConfigValue(captureDevices);
+            reload();
+          }}
+        >
+          Add ws proxy url
         </button>
       </div>
       {ConfigEditorItems.map(

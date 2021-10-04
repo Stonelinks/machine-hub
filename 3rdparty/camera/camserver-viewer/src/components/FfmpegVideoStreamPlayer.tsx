@@ -1,13 +1,15 @@
 import JMuxer from "jmuxer";
-import React from "react";
 import { inflateRaw } from "pako";
+import React from "react";
 import {
   VIDEO_FPS,
   VIDEO_STREAM_HEIGHT,
   VIDEO_STREAM_WIDTH,
   WS_COMPRESSION_ENABLED,
 } from "../common/constants";
+import { isRemoteWsProxyDeviceType } from "../common/devices";
 import { encode } from "../common/encode";
+import { now } from "../common/time";
 import {
   AllVideoWebSocketMsgs,
   PingPayload,
@@ -16,7 +18,9 @@ import {
 } from "../common/types";
 import { WS_BASE_URL } from "../utils/api";
 import VideoDeviceControl from "./VideoDeviceControl";
-import { now } from "moment";
+
+// tslint:disable-next-line:no-var-requires
+const canvasToImage = require("canvas-to-image");
 
 interface Props {
   deviceId: string;
@@ -34,11 +38,11 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props, State> {
     lastLagMs: 0,
   };
 
-  componentWillUnmount() {
+  componentWillUnmount = () => {
     window.removeEventListener("focus", this.onFocus);
     window.removeEventListener("blur", this.onBlur);
     this.getSocket().close();
-  }
+  };
 
   componentDidMount = () => {
     window.addEventListener("focus", this.onFocus);
@@ -70,7 +74,6 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props, State> {
                 lastLagMs: (m.msg as PingPayload).lastLagMs as number,
               });
               break;
-
             default:
               break;
           }
@@ -119,13 +122,18 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props, State> {
   };
 
   getWsUrl = () => {
-    return `${WS_BASE_URL}/stream/${encode(this.props.deviceId)}/ws`;
+    const isProxy = isRemoteWsProxyDeviceType(this.props.deviceId);
+    return `${WS_BASE_URL}/stream/${encode(this.props.deviceId)}/${
+      isProxy ? "ws_proxy" : "ws"
+    }`;
   };
 
   vid: HTMLVideoElement | null = null;
   getVideoEl = () => {
     if (!this.vid) {
-      this.vid = window.document.querySelector(`#${this.getPlayerId()}`);
+      this.vid = window.document.getElementById(
+        this.getPlayerId(),
+      ) as HTMLVideoElement | null;
     }
     return this.vid;
   };
@@ -169,11 +177,34 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props, State> {
     return this.socket;
   };
 
-  render() {
+  captureScreenFrame = () => {
+    const vid = this.getVideoEl();
+
+    if (vid) {
+      const w = vid.videoWidth;
+      const h = vid.videoHeight;
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx) {
+        ctx.drawImage(vid, 0, 0, w, h);
+
+        canvasToImage(canvas, {
+          name: `frame-${now()}`,
+          type: "png",
+          quality: 1,
+        });
+      }
+    }
+  };
+
+  render = () => {
     this.log(`render`);
     const { enableControls, deviceId } = this.props;
     return (
-      <>
+      <div>
         <video
           id={this.getPlayerId()}
           autoPlay
@@ -183,16 +214,33 @@ export class FfmpegVideoStreamPlayer extends React.Component<Props, State> {
             height: `${VIDEO_STREAM_HEIGHT}px`,
           }}
         />
+        <div>
+          <pre
+            style={{
+              display: "inline-block",
+            }}
+          >{`lag (ms): ${this.state.lastLagMs}`}</pre>
+          <a
+            style={{
+              marginLeft: "10px",
+              display: "inline-block",
+              backgroundColor: "lightgrey",
+              paddingLeft: "4px",
+              paddingRight: "4px",
+              cursor: "pointer",
+            }}
+            onClick={this.captureScreenFrame}
+          >
+            capture
+          </a>
+        </div>
         {enableControls ? (
           <VideoDeviceControl
             sendMessage={this.sendMessage}
             deviceId={deviceId}
           />
         ) : null}
-        <>
-          <pre>{`last lag (ms): ${this.state.lastLagMs}`}</pre>
-        </>
-      </>
+      </div>
     );
-  }
+  };
 }

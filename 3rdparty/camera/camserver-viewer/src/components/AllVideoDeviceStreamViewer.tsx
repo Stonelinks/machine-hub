@@ -1,12 +1,10 @@
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
-import { LOCAL_DEVICE_ID_NONE } from "../common/constants";
 import { isNullDeviceId } from "../common/devices";
 import { encode } from "../common/encode";
 import { LocalDeviceId } from "../common/types";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
-import { HTTP_BASE_URL } from "../utils/api";
 import { frontendPath } from "../utils/url";
 import VideoDeviceViewer from "./VideoDeviceViewer";
 

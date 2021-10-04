@@ -8,5 +8,6 @@ opt
 build
 
 config.json
+config*.json
 
 captures

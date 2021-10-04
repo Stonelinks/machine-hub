@@ -7,11 +7,14 @@ const isHttps = window.location.protocol.startsWith("https");
 export const HTTP_BASE_URL =
   process.env.PUBLIC_URL ||
   `${window.location.protocol}//${window.location.hostname}:${SERVER_PORT}`;
+console.log("HTTP_BASE_URL", HTTP_BASE_URL);
+
 export const WS_BASE_URL = process.env.PUBLIC_URL
   ? `ws${isHttps ? "s" : ""}://${window.location.hostname}${
       process.env.PUBLIC_URL
     }`
   : `ws${isHttps ? "s" : ""}://${window.location.hostname}:${SERVER_PORT}`;
+console.log("HTTP_BASE_URL", HTTP_BASE_URL);
 
 export const apiFetch = async (url: string): Promise<any> => {
   const res = await window.fetch(`${HTTP_BASE_URL}/${url}`);

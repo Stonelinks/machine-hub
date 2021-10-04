@@ -3,6 +3,7 @@ import { Application } from "express-ws";
 import { FfmpegCommand } from "fluent-ffmpeg";
 import { deflateRaw } from "pako";
 import { Readable, Writable } from "stream";
+import * as ws from "ws";
 import {
   ENABLE_REMOTE_RTSP,
   REMOTE_VIDEO_FPS,
@@ -12,18 +13,18 @@ import {
   WS_PING_INTERVAL_MS,
 } from "../common/constants";
 import {
-  isLocalDevice,
+  isLocalDeviceType,
   remoteDeviceIdToMjpegStreamUrl,
-  remoteDeviceIdToRtspStreamUrl,
+  remoteMjpegDeviceIdToRtspStreamUrl,
 } from "../common/devices";
 import { decode } from "../common/encode";
+import { now } from "../common/time";
 import {
   AllVideoWebSocketMsgs,
   AnyDeviceId,
   VideoStreamTypes,
   VideoWebSocketMsgTypes,
 } from "../common/types";
-import { now } from "../utils/cron";
 import { getFfmpeg } from "../utils/ffmpeg";
 import {
   getFps,
@@ -156,7 +157,7 @@ const startFfmpegStreamer = async (deviceId: AnyDeviceId) => {
   let input: any;
   let inputFormat = "mjpeg";
   let extraInputOptions = [];
-  if (isLocalDevice(deviceId)) {
+  if (isLocalDeviceType(deviceId)) {
     await start(deviceId);
     cam = getOrCreateCameraDevice(deviceId);
     fps = getFps(cam.cam.configGet());
@@ -169,7 +170,7 @@ const startFfmpegStreamer = async (deviceId: AnyDeviceId) => {
     });
   } else {
     input = ENABLE_REMOTE_RTSP
-      ? remoteDeviceIdToRtspStreamUrl(deviceId)
+      ? remoteMjpegDeviceIdToRtspStreamUrl(deviceId)
       : remoteDeviceIdToMjpegStreamUrl(deviceId);
     if (ENABLE_REMOTE_RTSP) {
       inputFormat = "rtsp";
@@ -270,25 +271,25 @@ export const streamingRoutes = async (app: Application) => {
     });
   });
 
-  app.ws("/stream/:deviceId/ws", async (ws, req) => {
+  app.ws("/stream/:deviceId/ws", async (socket, req) => {
     const deviceId = decode(req.params.deviceId);
-    const log = (...args: any[]) => console.log(deviceId, ...args);
-    const err = (...args: any[]) => console.error(deviceId, ...args);
+    const log = (...args: any[]) => console.log("ws", deviceId, ...args);
+    const err = (...args: any[]) => console.error("ws", deviceId, ...args);
     const send = (m: Buffer | AllVideoWebSocketMsgs) => {
       if (Buffer.isBuffer(m)) {
         if (WS_COMPRESSION_ENABLED) {
           const d = deflateRaw(m);
-          ws.send(d);
+          socket.send(d);
         } else {
-          ws.send(m);
+          socket.send(m);
         }
       } else {
         const msgStr = JSON.stringify(m);
-        log(`ws send ${msgStr}`);
-        ws.send(msgStr);
+        log(`send ${msgStr}`);
+        socket.send(msgStr);
       }
     };
-    log(`ws open`);
+    log(`open`);
     videoStreamUserConnected(deviceId, VideoStreamTypes.ffmpeg);
     const { ffmpegHandle } = getOrCreateStreamingInfo(deviceId);
     if (!ffmpegHandle) {
@@ -313,8 +314,8 @@ export const streamingRoutes = async (app: Application) => {
     }, WS_PING_INTERVAL_MS);
 
     getOrCreateFfmpegFrameEmitter(deviceId).on("data", listener);
-    ws.on("close", () => {
-      log(`ws close`);
+    socket.on("close", () => {
+      log(`close`);
       videoStreamUserDisconnected(deviceId, VideoStreamTypes.ffmpeg);
       if (
         getOrCreateStreamingInfo(deviceId).ffmpegNumVideoUsersConnected === 0
@@ -325,8 +326,8 @@ export const streamingRoutes = async (app: Application) => {
       clearInterval(pingInterval);
     });
 
-    ws.on("message", m => {
-      log(`ws received ${m}`);
+    socket.on("message", m => {
+      log(`received ${m}`);
       try {
         const p = JSON.parse(m as string);
         switch (p.type as VideoWebSocketMsgTypes) {
@@ -342,7 +343,7 @@ export const streamingRoutes = async (app: Application) => {
           default:
             break;
         }
-        if (isLocalDevice(deviceId)) {
+        if (isLocalDeviceType(deviceId)) {
           const { cam, zoom } = getOrCreateCameraDevice(deviceId);
           switch (p.type as VideoWebSocketMsgTypes) {
             case VideoWebSocketMsgTypes.zoomControl:
@@ -366,20 +367,22 @@ export const streamingRoutes = async (app: Application) => {
     });
   });
 
-  app.ws("/stream/:deviceId/ws_controls_only", async (ws, req) => {
+  app.ws("/stream/:deviceId/ws_controls_only", async (socket, req) => {
     const deviceId = decode(req.params.deviceId);
-    const log = (...args: any[]) => console.log(deviceId, ...args);
-    const err = (...args: any[]) => console.error(deviceId, ...args);
+    const log = (...args: any[]) =>
+      console.log("ws_controls_only", deviceId, ...args);
+    const err = (...args: any[]) =>
+      console.error("ws_controls_only", deviceId, ...args);
     const send = (m: Buffer | AllVideoWebSocketMsgs) => {
       if (Buffer.isBuffer(m)) {
-        ws.send(m);
+        socket.send(m);
       } else {
         const msgStr = JSON.stringify(m);
-        log(`ws send ${msgStr}`);
-        ws.send(msgStr);
+        log(`send ${msgStr}`);
+        socket.send(msgStr);
       }
     };
-    log(`ws open`);
+    log(`open`);
     let lastPongTs = now();
     const pingInterval = setInterval(() => {
       const n = now();
@@ -392,13 +395,13 @@ export const streamingRoutes = async (app: Application) => {
       });
     }, WS_PING_INTERVAL_MS);
 
-    ws.on("close", () => {
-      log(`ws close`);
+    socket.on("close", () => {
+      log(`close`);
       clearInterval(pingInterval);
     });
 
-    ws.on("message", m => {
-      log(`ws received ${m}`);
+    socket.on("message", m => {
+      log(`received ${m}`);
       try {
         const p = JSON.parse(m as string);
         const { cam, zoom } = getOrCreateCameraDevice(deviceId);
@@ -423,6 +426,72 @@ export const streamingRoutes = async (app: Application) => {
         err("received message that isn't JSON?");
         err(e.stack);
       }
+    });
+  });
+
+  app.ws("/stream/:deviceId/ws_proxy", async (upstreamWs, req) => {
+    const deviceId = decode(req.params.deviceId);
+    // wildly unsafe if the URL is malformed
+    const origDeviceId = decode(deviceId.split("/").slice(-2, -1)[0]);
+    const origHost = deviceId.split("//")[1].split("/")[0];
+
+    const log = (...args: any[]) =>
+      console.log("ws_proxy", origHost, origDeviceId, deviceId, ...args);
+    const err = (...args: any[]) =>
+      console.error("ws_proxy", deviceId, ...args);
+
+    const sendUpstream = (e: ws.MessageEvent) => {
+      if (Buffer.isBuffer(e.data)) {
+        upstreamWs.send(e.data);
+      } else {
+        log("sending upstream", e.data);
+        upstreamWs.send(e.data);
+      }
+    };
+
+    // device id is just a websocket URL to where we wanna proxy
+    const downstreamWs = new ws.WebSocket(deviceId);
+
+    const sendDownstream = (m: string) => {
+      log("sending downstream", m);
+      downstreamWs.send(m);
+    };
+
+    downstreamWs.onmessage = e => {
+      // just proxy everything upstream
+      sendUpstream(e);
+    };
+
+    downstreamWs.on("error", e => {
+      err("downstream ws socket Error", e);
+    });
+
+    downstreamWs.on("close", () => {
+      log(`downstream ws close, closing upstream as well`);
+      upstreamWs.close();
+    });
+
+    upstreamWs.on("close", () => {
+      log(`upstream ws close, closing downstream as well`);
+      downstreamWs.close();
+    });
+
+    upstreamWs.on("message", m => {
+      log(`received from upstream ${m}`);
+      sendDownstream(m as string);
+      // TODO: for payloads with device IDs, need to rewrite what device its for and send it downstream
+
+      // try {
+      //   const p = JSON.parse(m as string) as AllVideoWebSocketMsgs;
+
+      //   // if (p.deviceId) {
+      //   //   p.deviceId = origEncodedDeviceId;
+      //   // }
+
+      // } catch (e) {
+      //   err("received message from upstream that isn't JSON?");
+      //   err(e.stack);
+      // }
     });
   });
 };

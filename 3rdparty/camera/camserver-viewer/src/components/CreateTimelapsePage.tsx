@@ -1,10 +1,8 @@
 import React from "react";
-import { connect, ConnectedProps } from "react-redux";
-import { RootState } from "../redux";
-import { HTTP_BASE_URL, fillInUrlTemplate, WS_BASE_URL } from "../utils/api";
-import { MILLISECONDS_IN_SECOND } from "../common/time";
-import { frontendPath, navigate } from "../utils/url";
 import { encode } from "../common/encode";
+import { MILLISECONDS_IN_SECOND } from "../common/time";
+import { fillInUrlTemplate, WS_BASE_URL } from "../utils/api";
+import { frontendPath, navigate } from "../utils/url";
 
 interface Props {
   captureId: string;

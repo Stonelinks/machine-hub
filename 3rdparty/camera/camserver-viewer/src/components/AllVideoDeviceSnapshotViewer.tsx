@@ -1,8 +1,8 @@
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
-import { LOCAL_DEVICE_ID_NONE } from "../common/constants";
 import { isNullDeviceId } from "../common/devices";
 import { encode } from "../common/encode";
+import { MILLISECONDS_IN_SECOND } from "../common/time";
 import { LocalDeviceId } from "../common/types";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
@@ -24,14 +24,34 @@ const connector = connect(mapState, mapDispatch);
 
 type PropsFromRedux = ConnectedProps<typeof connector>;
 
-interface OwnProps {}
+interface OwnProps {
+  refreshSnapshots?: boolean;
+  big?: boolean;
+}
 
 type Props = PropsFromRedux & OwnProps;
 
 const AllVideoDeviceSnapshotViewer = ({
   captureDevices,
   onGetConfig,
+  refreshSnapshots,
+  big,
 }: Props) => {
+  const [snapshotRefreshIdx, setSnapshotRefreshIdx] = React.useState(0);
+
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (refreshSnapshots) {
+      interval = setInterval(() => {
+        setSnapshotRefreshIdx(snapshotRefreshIdx + 1);
+      }, 10 * MILLISECONDS_IN_SECOND);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [snapshotRefreshIdx, setSnapshotRefreshIdx]);
+
   React.useEffect(() => {
     onGetConfig();
   }, [onGetConfig]);
@@ -46,7 +66,7 @@ const AllVideoDeviceSnapshotViewer = ({
             return (
               <div
                 style={{
-                  width: "calc(33% - 1px)",
+                  width: big ? "auto" : "calc(33% - 1px)",
                   margin: "0px -1px -1px 0px",
                   padding: "0px",
                   display: "inline-block",
@@ -55,7 +75,9 @@ const AllVideoDeviceSnapshotViewer = ({
               >
                 <Link to={frontendPath(`stream/${encode(deviceId)}`)}>
                   <img
-                    src={`${HTTP_BASE_URL}/stream/${encode(deviceId)}/snapshot`}
+                    src={`${HTTP_BASE_URL}/stream/${encode(
+                      deviceId,
+                    )}/snapshot?_n=${snapshotRefreshIdx}`}
                     style={{
                       width: "auto",
                       height: "auto",

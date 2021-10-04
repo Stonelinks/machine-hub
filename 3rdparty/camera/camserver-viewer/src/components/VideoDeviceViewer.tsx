@@ -1,8 +1,7 @@
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
-import { LOCAL_DEVICE_ID_NONE } from "../common/constants";
-import { isLocalDevice, isNullDeviceId } from "../common/devices";
-import { AnyDeviceId, LocalDeviceId, VideoStreamTypes } from "../common/types";
+import { isLocalDeviceType, isNullDeviceId } from "../common/devices";
+import { AnyDeviceId, VideoStreamTypes } from "../common/types";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
 import { FfmpegVideoStreamPlayer } from "./FfmpegVideoStreamPlayer";
@@ -80,8 +79,14 @@ const VideoDeviceViewer = ({
   return (
     <div>
       <div>
-        <h3 style={{ display: "inline-block" }}>{deviceId}</h3>
-        {isLocalDevice(deviceId) ? (
+        <pre
+          style={{
+            display: "inline-block",
+          }}
+        >
+          {deviceId}
+        </pre>
+        {isLocalDeviceType(deviceId) ? (
           <a
             style={{
               marginLeft: "10px",

@@ -118,12 +118,16 @@ const App = () => {
                 )}
               </Match>
 
-              <Match path={frontendPath("streams/all")}>
+              <Match path={frontendPath("streams/all/realtime")}>
                 <AllVideoDeviceStreamViewer />
               </Match>
 
+              <Match path={frontendPath("streams/all")}>
+                <AllVideoDeviceSnapshotViewer big refreshSnapshots />
+              </Match>
+
               <Match path={frontendPath("streams")}>
-                <AllVideoDeviceSnapshotViewer />
+                <AllVideoDeviceSnapshotViewer refreshSnapshots />
                 <NavItem
                   to={frontendPath("streams/all")}
                   title="View All Streams"

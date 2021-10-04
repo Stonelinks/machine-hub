@@ -1,24 +1,21 @@
 import throttle from "lodash.throttle";
 import * as mousetrap from "mousetrap";
 import React from "react";
-import { connect, ConnectedProps } from "react-redux";
-import { MILLISECONDS_IN_SECOND } from "../common/time";
-import { RootState } from "../redux";
-import { apiCall } from "../redux/api/actions";
-import RenderIfPtzEnabled from "../utils/RenderIfPtzEnabled";
 import {
   FaChevronDown,
-  FaChevronUp,
   FaChevronLeft,
   FaChevronRight,
-  FaPlus,
+  FaChevronUp,
   FaMinus,
+  FaPlus,
 } from "react-icons/fa";
+import { MILLISECONDS_IN_SECOND } from "../common/time";
 import {
   AllVideoWebSocketMsgs,
   LocalDeviceId,
   VideoWebSocketMsgTypes,
 } from "../common/types";
+import RenderIfPtzEnabled from "../utils/RenderIfPtzEnabled";
 
 interface OwnProps {
   deviceId: LocalDeviceId;

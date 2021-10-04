@@ -3,8 +3,10 @@ import * as fs from "fs";
 import * as request from "request";
 import { VIDEO_FPS } from "../common/constants";
 import {
-  isLocalDevice,
-  remoteDeviceIdToJpegSnapshotUrl,
+  isLocalDeviceType,
+  isRemoteMjpegDeviceType,
+  remoteMjpegDeviceToJpegSnapshotUrl,
+  remoteWsProxyDeviceIdToJpegSnapshotUrl,
 } from "../common/devices";
 import { MILLISECONDS_IN_SECOND, timeout } from "../common/time";
 import { AnyDeviceId, LocalDeviceId } from "../common/types";
@@ -183,7 +185,6 @@ export const start = async (deviceId: LocalDeviceId): Promise<void> => {
           cameraDevices[deviceId].initState = InitState.done;
           res();
         });
-
         break;
       case InitState.inProgress:
         // wait while camera initializes
@@ -192,11 +193,10 @@ export const start = async (deviceId: LocalDeviceId): Promise<void> => {
           console.log("another init already in progress, waiting");
           const { initState: iState } = getOrCreateCameraDevice(deviceId);
           latestInitState = iState;
-          await timeout(300);
+          await timeout(2 * MILLISECONDS_IN_SECOND);
         }
         res();
         break;
-
       case InitState.done:
       default:
         break;
@@ -206,7 +206,7 @@ export const start = async (deviceId: LocalDeviceId): Promise<void> => {
 
 export const stop = (deviceId: LocalDeviceId) => {
   console.log(`stop ${deviceId}`);
-  if (isLocalDevice(deviceId)) {
+  if (isLocalDeviceType(deviceId)) {
     const { isOn } = getOrCreateCameraDevice(deviceId);
     if (isOn) {
       cameraDevices[deviceId].isOn = false;
@@ -216,7 +216,7 @@ export const stop = (deviceId: LocalDeviceId) => {
 
 const imgRequest = request.defaults({ encoding: null });
 export const takeSnapshot = async (deviceId: AnyDeviceId): Promise<Buffer> => {
-  if (isLocalDevice(deviceId)) {
+  if (isLocalDeviceType(deviceId)) {
     await start(deviceId);
 
     while (!cameraDevices[deviceId].lastFrame) {
@@ -226,8 +226,10 @@ export const takeSnapshot = async (deviceId: AnyDeviceId): Promise<Buffer> => {
     return cameraDevices[deviceId].lastFrame;
   } else {
     return new Promise((resolve, reject) => {
-      const url = remoteDeviceIdToJpegSnapshotUrl(deviceId);
-      console.log(`atempting snapshot for remote device at ${url}`);
+      const url = isRemoteMjpegDeviceType(deviceId)
+        ? remoteMjpegDeviceToJpegSnapshotUrl(deviceId)
+        : remoteWsProxyDeviceIdToJpegSnapshotUrl(deviceId);
+      console.log(`attempting snapshot for remote device at ${url}`);
       imgRequest.get(url, (err, res, body) => {
         if (err) {
           reject(err);

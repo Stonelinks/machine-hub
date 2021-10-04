@@ -14,14 +14,19 @@ export const THUMBS_FOLDER_NAME = ".thumbs";
 export const VIEWER_FOLDER = path.resolve("./camserver-viewer/build");
 export const SERVER_PORT =
   parseInt((process as any).env.SERVER_PORT, 10) || 4001;
-export const CONFIG_FILE = prefixPath("config.json");
+export const CONFIG_FILE = prefixPath(
+  (process as any).env.CONFIG_FILE
+    ? (process as any).env.CONFIG_FILE
+    : "config.json",
+);
 
 export const VIDEO_FPS = 30;
 export const VIDEO_STREAM_WIDTH = 640;
 export const VIDEO_STREAM_HEIGHT = 480;
 
-export const LOCAL_DEVICE_ID_NONE = "/dev/Null device ID";
-export const REMOTE_DEVICE_ID_NONE = "http://null device url";
+export const LOCAL_DEVICE_ID_NONE = "/dev/null_device_ID";
+export const REMOTE_MJPEG_DEVICE_ID_NONE = "http://null_device_mjpeg_url";
+export const REMOTE_WS_PROXY_DEVICE_ID_NONE = "ws://null_device ws_url";
 
 export const TIMELAPSE_CHUNK_SIZE = 100;
 

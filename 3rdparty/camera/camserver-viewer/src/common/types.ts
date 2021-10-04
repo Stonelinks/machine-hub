@@ -7,9 +7,22 @@ export type LocalDeviceId = string;
 
 // an address to an external mjpeg camera -- http://192.168.50.120:81 for example
 // we assume /stream has an mjpeg stream, and /capture gives you a snapshot
-export type RemoteDeviceUrl = string;
+export type RemoteMjpegDeviceUrl = string;
 
-export type AnyDeviceId = LocalDeviceId | RemoteDeviceUrl;
+// an address to a websocket handler for another instance of camserver
+// like ws://localhost:4001/stream/JTJGZGV2JTJGdmlkZW8w/ws
+export type RemoteWsProxyDeviceUrl = string;
+
+export enum DeviceIdType {
+  LocalDeviceId = "LocalDeviceId",
+  RemoteMjpegDeviceUrl = "RemoteMjpegDeviceUrl",
+  RemoteWsDeviceUrl = "RemoteWsDeviceUrl",
+}
+
+export type AnyDeviceId =
+  | LocalDeviceId
+  | RemoteMjpegDeviceUrl
+  | RemoteWsProxyDeviceUrl;
 
 export const slugifyDeviceId = (deviceId: LocalDeviceId) =>
   deviceId.slice(1).replace("/", "-");

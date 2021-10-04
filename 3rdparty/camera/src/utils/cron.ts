@@ -1,18 +1,11 @@
-import { DateTime } from "luxon";
 import {
-  MILLISECONDS_IN_MINUTE,
+  DEFAULT_CRON_INTERVAL_MS,
   MILLISECONDS_IN_SECOND,
+  now,
   timeout,
 } from "../common/time";
 import { CacheCleanCronJob } from "./cache";
 import { CameraStreamTimeoutCronJob, CaptureCronJob } from "./timelapse";
-
-export const DEFAULT_INTERVAL_MS = MILLISECONDS_IN_MINUTE;
-
-export const now = () => Date.now();
-
-export const localNow = () =>
-  DateTime.fromMillis(now()).setZone("America/Los_Angeles");
 
 interface CronJobs {
   name: string;
@@ -38,7 +31,7 @@ class Cron {
     for (let i = 0; i < this.jobs.length; i++) {
       const { intervalMs, fn, name } = this.jobs[i];
 
-      let iMs: number = DEFAULT_INTERVAL_MS;
+      let iMs: number = DEFAULT_CRON_INTERVAL_MS;
       if (typeof intervalMs === "function") {
         iMs = await intervalMs();
       } else if (typeof intervalMs === "number") {

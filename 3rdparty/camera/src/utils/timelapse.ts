@@ -10,7 +10,13 @@ import {
 } from "../common/constants";
 import { isNullDeviceId } from "../common/devices";
 import { encode } from "../common/encode";
-import { MILLISECONDS_IN_MINUTE, MILLISECONDS_IN_SECOND } from "../common/time";
+import {
+  DEFAULT_CRON_INTERVAL_MS,
+  localNow,
+  MILLISECONDS_IN_MINUTE,
+  MILLISECONDS_IN_SECOND,
+  now,
+} from "../common/time";
 import { slugifyDeviceId } from "../common/types";
 import {
   getLastUserDisconnectedMs,
@@ -19,7 +25,6 @@ import {
 import { deleteFile } from "../utils/files";
 import { cachedDownsize } from "../utils/images";
 import { getConfig, setConfigValue } from "./config";
-import { DEFAULT_INTERVAL_MS, localNow, now } from "./cron";
 import { getFfmpeg } from "./ffmpeg";
 import { getChronologicalFileList, writeFileAsync } from "./files";
 import { fileIsGifOrMovie, fileIsImage } from "./images";
@@ -52,7 +57,7 @@ export const CaptureCronJob = {
   name: "capture",
   intervalMs: async () => {
     const c = await getConfig();
-    return c.captureEnable ? c.captureRateMs : DEFAULT_INTERVAL_MS;
+    return c.captureEnable ? c.captureRateMs : DEFAULT_CRON_INTERVAL_MS;
   },
   fn: async (nowMs: number) => {
     let c = await getConfig();
@@ -168,7 +173,7 @@ export const CameraStreamTimeoutCronJob = {
 //   name: "pan",
 //   intervalMs: async () => {
 //     const c = await getConfig();
-//     return c.panStepEnable ? c.panStepRateMs : DEFAULT_INTERVAL_MS;
+//     return c.panStepEnable ? c.panStepRateMs : DEFAULT_CRON_INTERVAL_MS;
 //   },
 //   fn: async () => {
 //     const c = await getConfig();
@@ -185,7 +190,7 @@ export const CameraStreamTimeoutCronJob = {
 //   name: "tilt",
 //   intervalMs: async () => {
 //     const c = await getConfig();
-//     return c.tiltStepEnable ? c.tiltStepRateMs : DEFAULT_INTERVAL_MS;
+//     return c.tiltStepEnable ? c.tiltStepRateMs : DEFAULT_CRON_INTERVAL_MS;
 //   },
 //   fn: async () => {
 //     const c = await getConfig();

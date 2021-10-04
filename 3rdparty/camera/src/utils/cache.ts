@@ -1,7 +1,6 @@
 import * as flatCache from "flat-cache";
 import { CACHE_FOLDER, CACHE_MAX_AGE_DAYS } from "../common/constants";
-import { MILLISECONDS_IN_DAY } from "../common/time";
-import { localNow } from "./cron";
+import { localNow, MILLISECONDS_IN_DAY } from "../common/time";
 import { deleteFile, recursivelyListDir, stat } from "./files";
 
 const caches = {};

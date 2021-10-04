@@ -1,8 +1,8 @@
 import { Application } from "express-ws";
 import { THUMBS_FOLDER_NAME } from "../common/constants";
 import { decode } from "../common/encode";
+import { now } from "../common/time";
 import { slugifyDeviceId } from "../common/types";
-import { now } from "../utils/cron";
 import { listDirectory, stat } from "../utils/files";
 import {
   getCaptureDir,
