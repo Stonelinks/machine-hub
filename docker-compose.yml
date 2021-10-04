@@ -7,7 +7,9 @@ volumes:
 services:
   frontend:
     build: ./frontend
-    expose:
+    privileged: true
+    network_mode: host
+    ports:
       - 8081
 
   # https://github.com/balenablocks/hostname
@@ -29,7 +31,7 @@ services:
       - /dev/ttyUSB0:/dev/ttyUSB0
     cap_add:
       - SYS_RAWIO
-    expose:
+    ports:
       - 8000
     volumes:
       - cnc-config:/config
@@ -44,7 +46,7 @@ services:
       - SERVER_PORT=4000
       - BASE_PATH=/capture
       - PUBLIC_URL=/camserver
-    expose:
+    ports:
       - 4000
 
   haproxy:
