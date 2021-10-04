@@ -329,7 +329,7 @@ export const streamingRoutes = async (app: Application) => {
     socket.on("message", m => {
       log(`received ${m}`);
       try {
-        const p = JSON.parse(m as string);
+        const p = JSON.parse((m as unknown) as string);
         switch (p.type as VideoWebSocketMsgTypes) {
           case VideoWebSocketMsgTypes.pong:
             lastPongTs = p.msg.ts;
@@ -403,7 +403,7 @@ export const streamingRoutes = async (app: Application) => {
     socket.on("message", m => {
       log(`received ${m}`);
       try {
-        const p = JSON.parse(m as string);
+        const p = JSON.parse((m as unknown) as string);
         const { cam, zoom } = getOrCreateCameraDevice(deviceId);
         switch (p.type as VideoWebSocketMsgTypes) {
           case VideoWebSocketMsgTypes.pong:
@@ -478,7 +478,7 @@ export const streamingRoutes = async (app: Application) => {
 
     upstreamWs.on("message", m => {
       log(`received from upstream ${m}`);
-      sendDownstream(m as string);
+      sendDownstream((m as unknown) as string);
       // TODO: for payloads with device IDs, need to rewrite what device its for and send it downstream
 
       // try {
