@@ -19,6 +19,7 @@ export const CONFIG_FILE = prefixPath(
     ? (process as any).env.CONFIG_FILE
     : "config.json",
 );
+export const CAMERA_INIT_TIMEOUT_MS = 10 * MILLISECONDS_IN_SECOND;
 
 export const VIDEO_FPS = 30;
 export const VIDEO_STREAM_WIDTH = 640;
@@ -41,3 +42,6 @@ export const REMOTE_MJPEG_STREAM_PATH = `/mjpeg`;
 export const ENABLE_REMOTE_RTSP = false;
 export const REMOTE_RTSP_PORT = 8554;
 export const REMOTE_RTSP_STREAM_PATH = `:${REMOTE_RTSP_PORT}/mjpeg/1`;
+
+export const NO_CACHE_HEADER =
+  "no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0";

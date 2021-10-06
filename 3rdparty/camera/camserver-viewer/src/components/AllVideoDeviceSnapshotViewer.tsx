@@ -2,7 +2,7 @@ import React from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { isNullDeviceId } from "../common/devices";
 import { encode } from "../common/encode";
-import { MILLISECONDS_IN_SECOND } from "../common/time";
+import { MILLISECONDS_IN_SECOND, now } from "../common/time";
 import { LocalDeviceId } from "../common/types";
 import { RootState } from "../redux";
 import { apiCall } from "../redux/api/actions";
@@ -37,20 +37,20 @@ const AllVideoDeviceSnapshotViewer = ({
   refreshSnapshots,
   big,
 }: Props) => {
-  const [snapshotRefreshIdx, setSnapshotRefreshIdx] = React.useState(0);
+  const [snapshotRefresh, setSnapshotRefresh] = React.useState(now());
 
   React.useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (refreshSnapshots) {
       interval = setInterval(() => {
-        setSnapshotRefreshIdx(snapshotRefreshIdx + 1);
+        setSnapshotRefresh(now());
       }, 10 * MILLISECONDS_IN_SECOND);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [snapshotRefreshIdx, setSnapshotRefreshIdx]);
+  }, [snapshotRefresh, setSnapshotRefresh]);
 
   React.useEffect(() => {
     onGetConfig();
@@ -77,7 +77,7 @@ const AllVideoDeviceSnapshotViewer = ({
                   <img
                     src={`${HTTP_BASE_URL}/stream/${encode(
                       deviceId,
-                    )}/snapshot?_n=${snapshotRefreshIdx}`}
+                    )}/snapshot?_n=${snapshotRefresh}`}
                     style={{
                       width: "auto",
                       height: "auto",

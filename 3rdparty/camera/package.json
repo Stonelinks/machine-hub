@@ -11,24 +11,27 @@
   },
   "private": true,
   "scripts": {
-    "build": "cd camserver-viewer && yarn build",
+    "build": "fix-lint && cd camserver-viewer && yarn build",
     "clean": "rm -rf yarn.lock node_modules && cd camserver-viewer && rm -rf yarn.lock node_modules build",
     "dev-client": "cd camserver-viewer && yarn dev-start",
     "dev-server": "ts-node-dev --no-notify src/server.ts",
     "dev": "yarn sync-common && concurrently \"yarn dev-server\" \"yarn dev-client\"",
+    "check-types": "tsc --noEmit src/server.ts",
     "fix": "fix-lint",
     "lint": "fix-lint",
     "reset": "yarn clean && yarn setup",
     "scripts": "cat package.json | jq .scripts",
     "setup": "yarn && yarn sync-common && cd camserver-viewer && yarn",
     "sync-common": "sync-common",
-    "start-server": "ts-node src/server.ts",
+    "start-server": "ts-node -T src/server.ts",
     "start": "yarn setup && yarn sync-common && yarn build && concurrently \"yarn start-server\" \"python -m webbrowser http://localhost:4001\""
   },
   "prettier": {
     "trailingComma": "all"
   },
   "dependencies": {
+    "@swc/core": "^1.2.93",
+    "@swc/helpers": "^0.2.13",
     "@types/express": "^4.17.6",
     "@types/express-ws": "^3.0.0",
     "@types/fluent-ffmpeg": "^2.1.16",

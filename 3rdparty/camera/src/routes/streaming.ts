@@ -6,6 +6,7 @@ import { Readable, Writable } from "stream";
 import * as ws from "ws";
 import {
   ENABLE_REMOTE_RTSP,
+  NO_CACHE_HEADER,
   REMOTE_VIDEO_FPS,
   VIDEO_STREAM_HEIGHT,
   VIDEO_STREAM_WIDTH,
@@ -237,6 +238,7 @@ const stopFfmpegStreamer = (deviceId: AnyDeviceId) => {
 
 export const streamingRoutes = async (app: Application) => {
   app.get("/stream/:deviceId/snapshot", async (req, res) => {
+    res.set("Cache-Control", NO_CACHE_HEADER);
     const deviceId = decode(req.params.deviceId);
     const data = await takeSnapshot(deviceId);
     res.send(data);
@@ -247,8 +249,7 @@ export const streamingRoutes = async (app: Application) => {
     await start(deviceId);
     videoStreamUserConnected(deviceId, VideoStreamTypes.mjpeg);
     res.writeHead(200, {
-      "Cache-Control":
-        "no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0",
+      "Cache-Control": NO_CACHE_HEADER,
       Pragma: "no-cache",
       Connection: "close",
       "Content-Type": "multipart/x-mixed-replace; boundary=--myboundary",

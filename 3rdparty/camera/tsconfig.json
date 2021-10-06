@@ -12,5 +12,9 @@
   },
   "rulesDirectory": ["node_modules/tslint-microsoft-contrib"],
   "include": ["**/*"],
-  "exclude": ["node_modules", "camserver-viewer"]
+  "exclude": ["node_modules", "camserver-viewer"],
+  "ts-node": {
+    "transpileOnly": true,
+    "transpiler": "ts-node/transpilers/swc-experimental"
+  }
 }

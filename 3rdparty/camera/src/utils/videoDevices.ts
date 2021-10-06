@@ -1,14 +1,14 @@
 import { EventEmitter } from "events";
 import * as fs from "fs";
 import * as request from "request";
-import { VIDEO_FPS } from "../common/constants";
+import { CAMERA_INIT_TIMEOUT_MS, VIDEO_FPS } from "../common/constants";
 import {
   isLocalDeviceType,
   isRemoteMjpegDeviceType,
   remoteMjpegDeviceToJpegSnapshotUrl,
   remoteWsProxyDeviceIdToJpegSnapshotUrl,
 } from "../common/devices";
-import { MILLISECONDS_IN_SECOND, timeout } from "../common/time";
+import { MILLISECONDS_IN_SECOND, now, timeout } from "../common/time";
 import { AnyDeviceId, LocalDeviceId } from "../common/types";
 
 // tslint:disable-next-line:no-var-requires
@@ -139,7 +139,7 @@ export const start = async (deviceId: LocalDeviceId): Promise<void> => {
     return Promise.resolve();
   }
 
-  return new Promise(async res => {
+  return new Promise(async (res, rej) => {
     switch (initState) {
       case InitState.none:
         cameraDevices[deviceId].initState = InitState.inProgress;
@@ -187,13 +187,17 @@ export const start = async (deviceId: LocalDeviceId): Promise<void> => {
         });
         break;
       case InitState.inProgress:
-        // wait while camera initializes
+        // wait while camera initializes, with timeout
+        const waitingStart = now();
         let latestInitState: InitState = initState;
         while (latestInitState !== InitState.done) {
           console.log("another init already in progress, waiting");
           const { initState: iState } = getOrCreateCameraDevice(deviceId);
           latestInitState = iState;
           await timeout(2 * MILLISECONDS_IN_SECOND);
+          if (now() > waitingStart + CAMERA_INIT_TIMEOUT_MS) {
+            rej(`timed out waiting for ${deviceId} to init`);
+          }
         }
         res();
         break;
