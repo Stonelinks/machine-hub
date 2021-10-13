@@ -14,14 +14,15 @@ services:
     ports:
       - 8081
 
-  # https://github.com/balenablocks/hostname
-  hostname:
-    image: balenablocks/hostname
-    restart: no
-    labels:
-      io.balena.features.supervisor-api: 1
-    environment:
-      SET_HOSTNAME: machine-hub
+  # disabled for now since it seems to be breaking a DNS lookup that happens in cncjs
+  # # https://github.com/balenablocks/hostname
+  # hostname:
+  #   image: balenablocks/hostname
+  #   restart: no
+  #   labels:
+  #     io.balena.features.supervisor-api: 1
+  #   environment:
+  #     SET_HOSTNAME: machine-hub
 
   cncjs:
     build: ./cncjs
