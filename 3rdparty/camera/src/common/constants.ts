@@ -39,9 +39,16 @@ export const REMOTE_VIDEO_FPS = 5;
 export const REMOTE_SNAPSHOT_PATH = `/snapshot`;
 export const REMOTE_MJPEG_STREAM_PATH = `/mjpeg`;
 
-export const ENABLE_REMOTE_RTSP = false;
-export const REMOTE_RTSP_PORT = 8554;
-export const REMOTE_RTSP_STREAM_PATH = `:${REMOTE_RTSP_PORT}/mjpeg/1`;
+export const ENABLE_REMOTE_RTSP_CLIENT = false;
+export const REMOTE_RTSP_CLIENT_PORT = 8554;
+export const REMOTE_RTSP_CLIENT_STREAM_PATH = `:${REMOTE_RTSP_CLIENT_PORT}/mjpeg/1`;
+
+export const ENABLE_LOCAL_RTSP_SERVER = true;
+export const LOCAL_RTSP_SERVER_PORT = 5554;
+export const LOCAL_RTSP_CLIENT_PORT = 6554;
+export const LOCAL_RTSP_CLIENT_USE_RAWVIDEO_SOURCE = false;
 
 export const NO_CACHE_HEADER =
   "no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0";
+
+export const FFMPEG_STDOUT_LINES = 1;

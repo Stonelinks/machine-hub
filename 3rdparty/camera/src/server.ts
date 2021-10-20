@@ -14,6 +14,7 @@ import { initConfig } from "./utils/config";
 import { cron } from "./utils/cron";
 import { deleteDir, deleteFile } from "./utils/files";
 import { getThumbnail } from "./utils/images";
+import { initRtspServer } from "./utils/rtsp";
 
 const app = (express() as unknown) as expressWs.Application;
 
@@ -33,17 +34,6 @@ app.use(
     limit: "1gb", // heaven help us if we ever get more than a gig of JSON
   }),
 );
-
-app.get("/ping", (req, res) => {
-  res.send(JSON.stringify({ pong: "pong" }));
-});
-
-// Clients poll this, so when the server restarts it'll restart clients
-let shouldRestart = true;
-app.get("/update-apps", (req, res) => {
-  res.send(JSON.stringify({ shouldRestart }));
-  shouldRestart = false;
-});
 
 app.get("/thumb/:imageFilePath", async (req, res) => {
   const imageFilePath = decode(req.params.imageFilePath);
@@ -70,6 +60,7 @@ app.get("/deleteAll/:filePath", async (req, res) => {
     await streamingRoutes(app);
     await registerConfigRoutes(app);
     await registerTimelapseRoutes(app);
+    await initRtspServer();
   } catch (e) {
     console.error(e);
   } finally {

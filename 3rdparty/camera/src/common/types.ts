@@ -61,7 +61,8 @@ export interface Config extends JsonObject {
 }
 
 export enum VideoStreamTypes {
-  ffmpeg = "ffmpeg",
+  ffmpegRawVideo = "ffmpegRawVideo",
+  ffmpegRtsp = "ffmpegRtsp",
   mjpeg = "mjpeg",
 }
 

@@ -1,34 +1,28 @@
-import { EventEmitter } from "events";
 import { Application } from "express-ws";
-import { FfmpegCommand } from "fluent-ffmpeg";
 import { deflateRaw } from "pako";
-import { Readable, Writable } from "stream";
 import * as ws from "ws";
 import {
-  ENABLE_REMOTE_RTSP,
   NO_CACHE_HEADER,
-  REMOTE_VIDEO_FPS,
-  VIDEO_STREAM_HEIGHT,
-  VIDEO_STREAM_WIDTH,
   WS_COMPRESSION_ENABLED,
   WS_PING_INTERVAL_MS,
 } from "../common/constants";
-import {
-  isLocalDeviceType,
-  remoteDeviceIdToMjpegStreamUrl,
-  remoteMjpegDeviceIdToRtspStreamUrl,
-} from "../common/devices";
+import { isLocalDeviceType } from "../common/devices";
 import { decode } from "../common/encode";
 import { now } from "../common/time";
 import {
   AllVideoWebSocketMsgs,
-  AnyDeviceId,
   VideoStreamTypes,
   VideoWebSocketMsgTypes,
 } from "../common/types";
-import { getFfmpeg } from "../utils/ffmpeg";
 import {
-  getFps,
+  getOrCreateFfmpegRawVideoFrameEmitter,
+  getOrCreateStreamingInfo,
+  startFfmpegRawVideoStreamer,
+  stopFfmpegRawVideoStreamer,
+  videoStreamUserConnected,
+  videoStreamUserDisconnected,
+} from "../utils/streaming";
+import {
   getOrCreateCameraDevice,
   getZoomRelativeControl,
   moveAxisSpeedStart,
@@ -36,205 +30,6 @@ import {
   start,
   takeSnapshot,
 } from "../utils/videoDevices";
-
-interface StreamingInfo {
-  ffmpegNumVideoUsersConnected: number;
-  mjpegNumVideoUsersConnected: number;
-  lastUserDisconnectedMs: number;
-  ffmpegHandle?: FfmpegCommand;
-  frameEmitter: EventEmitter;
-}
-
-const streamingInfo: Record<AnyDeviceId, StreamingInfo> = {};
-
-const getOrCreateStreamingInfo = (deviceId: AnyDeviceId): StreamingInfo => {
-  if (!streamingInfo.hasOwnProperty(deviceId)) {
-    streamingInfo[deviceId] = {
-      ffmpegNumVideoUsersConnected: 0,
-      mjpegNumVideoUsersConnected: 0,
-      lastUserDisconnectedMs: 0,
-      frameEmitter: new EventEmitter(),
-    };
-  }
-  return streamingInfo[deviceId];
-};
-
-const getOrCreateFfmpegFrameEmitter = (deviceId: AnyDeviceId): EventEmitter =>
-  getOrCreateStreamingInfo(deviceId).frameEmitter;
-
-export const getLastUserDisconnectedMs = (deviceId: AnyDeviceId) =>
-  getOrCreateStreamingInfo(deviceId).lastUserDisconnectedMs;
-
-export const isStreamingVideo = (deviceId: AnyDeviceId) => {
-  const {
-    mjpegNumVideoUsersConnected,
-    ffmpegNumVideoUsersConnected,
-  } = getOrCreateStreamingInfo(deviceId);
-  const r = mjpegNumVideoUsersConnected > 0 || ffmpegNumVideoUsersConnected > 0;
-  console.log(`isStreamingVideo ${r}`);
-  return r;
-};
-
-const videoStreamUserConnected = (
-  deviceId: AnyDeviceId,
-  type: VideoStreamTypes,
-) => {
-  console.log(`user connected to video stream ${type} ${deviceId}`);
-  const {
-    ffmpegNumVideoUsersConnected,
-    mjpegNumVideoUsersConnected,
-  } = getOrCreateStreamingInfo(deviceId);
-
-  let newFfmpegNumVideoUsersConnected = ffmpegNumVideoUsersConnected;
-  let newMjpegNumVideoUsersConnected = mjpegNumVideoUsersConnected;
-
-  switch (type) {
-    case VideoStreamTypes.ffmpeg:
-      newFfmpegNumVideoUsersConnected++;
-      break;
-    case VideoStreamTypes.mjpeg:
-      newMjpegNumVideoUsersConnected++;
-      break;
-    default:
-      break;
-  }
-
-  streamingInfo[deviceId] = {
-    ...streamingInfo[deviceId],
-    ffmpegNumVideoUsersConnected: newFfmpegNumVideoUsersConnected,
-    mjpegNumVideoUsersConnected: newMjpegNumVideoUsersConnected,
-  };
-};
-
-const videoStreamUserDisconnected = (
-  deviceId: AnyDeviceId,
-  type: VideoStreamTypes,
-) => {
-  console.log(`user disconnected to video stream ${type} ${deviceId}`);
-  const {
-    ffmpegNumVideoUsersConnected,
-    mjpegNumVideoUsersConnected,
-  } = getOrCreateStreamingInfo(deviceId);
-
-  let newFfmpegNumVideoUsersConnected = ffmpegNumVideoUsersConnected;
-  let newMjpegNumVideoUsersConnected = mjpegNumVideoUsersConnected;
-
-  switch (type) {
-    case VideoStreamTypes.ffmpeg:
-      newFfmpegNumVideoUsersConnected++;
-      newFfmpegNumVideoUsersConnected = ffmpegNumVideoUsersConnected - 1;
-      if (newFfmpegNumVideoUsersConnected < 0) {
-        newFfmpegNumVideoUsersConnected = 0;
-      }
-      break;
-    case VideoStreamTypes.mjpeg:
-      newMjpegNumVideoUsersConnected++;
-      newMjpegNumVideoUsersConnected = mjpegNumVideoUsersConnected - 1;
-      if (newMjpegNumVideoUsersConnected < 0) {
-        newMjpegNumVideoUsersConnected = 0;
-      }
-      break;
-    default:
-      break;
-  }
-
-  streamingInfo[deviceId] = {
-    ...streamingInfo[deviceId],
-    lastUserDisconnectedMs: now(),
-    ffmpegNumVideoUsersConnected: newFfmpegNumVideoUsersConnected,
-    mjpegNumVideoUsersConnected: newMjpegNumVideoUsersConnected,
-  };
-};
-
-const startFfmpegStreamer = async (deviceId: AnyDeviceId) => {
-  console.log(`startFfmpegStreamer`);
-  const { ffmpegHandle } = getOrCreateStreamingInfo(deviceId);
-  if (ffmpegHandle) {
-    throw Error(`ffmpeg handle already exists for ${deviceId}`);
-  }
-
-  let cam;
-  let fps = REMOTE_VIDEO_FPS;
-  let input: any;
-  let inputFormat = "mjpeg";
-  let extraInputOptions = [];
-  if (isLocalDeviceType(deviceId)) {
-    await start(deviceId);
-    cam = getOrCreateCameraDevice(deviceId);
-    fps = getFps(cam.cam.configGet());
-    input = new Readable({
-      read() {
-        cam.emitter.once("frame", (buffer: Buffer) => {
-          this.push(buffer);
-        });
-      },
-    });
-  } else {
-    input = ENABLE_REMOTE_RTSP
-      ? remoteMjpegDeviceIdToRtspStreamUrl(deviceId)
-      : remoteDeviceIdToMjpegStreamUrl(deviceId);
-    if (ENABLE_REMOTE_RTSP) {
-      inputFormat = "rtsp";
-      extraInputOptions = ["-rtsp_transport udp"];
-    }
-  }
-
-  const streamFfmpegCommand = getFfmpeg({
-    stdoutLines: 1,
-  })
-    .input(input)
-    .inputFormat(inputFormat)
-    .inputOptions(extraInputOptions)
-    .inputFPS(fps)
-    .noAudio()
-    .videoCodec("libx264")
-    .outputFormat("rawvideo")
-    .videoBitrate("500k")
-    .size(`${VIDEO_STREAM_WIDTH}x${VIDEO_STREAM_HEIGHT}`)
-    .outputFPS(fps)
-    .outputOptions([
-      "-vprofile baseline",
-      "-bufsize 600k",
-      "-tune zerolatency",
-      "-pix_fmt yuv420p",
-      // "-g 30",
-    ]);
-
-  streamFfmpegCommand.on("start", commandStr => {
-    console.log(`ffmpeg process started: ${commandStr}`);
-  });
-
-  streamFfmpegCommand.on("error", err => {
-    console.log(`ffmpeg has been killed for ${deviceId}`);
-    console.error(err);
-  });
-
-  streamingInfo[deviceId].ffmpegHandle = streamFfmpegCommand;
-
-  streamFfmpegCommand.pipe(
-    new Writable({
-      objectMode: true,
-      write: (data, encoding, callback) => {
-        getOrCreateFfmpegFrameEmitter(deviceId).emit("data", data);
-        callback();
-      },
-    }),
-    { end: true },
-  );
-  console.log(`ffmpeg running for ${deviceId}`);
-};
-
-const stopFfmpegStreamer = (deviceId: AnyDeviceId) => {
-  console.log(`stopFfmpegStreamer`);
-  const { ffmpegHandle } = getOrCreateStreamingInfo(deviceId);
-  if (!ffmpegHandle) {
-    throw Error(`no ffmpeg handle exists for ${deviceId}`);
-  }
-
-  ffmpegHandle.kill("SIGKILL");
-
-  streamingInfo[deviceId].ffmpegHandle = undefined;
-};
 
 export const streamingRoutes = async (app: Application) => {
   app.get("/stream/:deviceId/snapshot", async (req, res) => {
@@ -291,10 +86,10 @@ export const streamingRoutes = async (app: Application) => {
       }
     };
     log(`open`);
-    videoStreamUserConnected(deviceId, VideoStreamTypes.ffmpeg);
-    const { ffmpegHandle } = getOrCreateStreamingInfo(deviceId);
-    if (!ffmpegHandle) {
-      await startFfmpegStreamer(deviceId);
+    videoStreamUserConnected(deviceId, VideoStreamTypes.ffmpegRawVideo);
+    const { ffmpegRawVideoHandle } = getOrCreateStreamingInfo(deviceId);
+    if (!ffmpegRawVideoHandle) {
+      await startFfmpegRawVideoStreamer(deviceId);
     }
     let isPlaying = true;
     const listener = (data: Buffer) => {
@@ -314,16 +109,14 @@ export const streamingRoutes = async (app: Application) => {
       });
     }, WS_PING_INTERVAL_MS);
 
-    getOrCreateFfmpegFrameEmitter(deviceId).on("data", listener);
+    getOrCreateFfmpegRawVideoFrameEmitter(deviceId).on("data", listener);
     socket.on("close", () => {
       log(`close`);
-      videoStreamUserDisconnected(deviceId, VideoStreamTypes.ffmpeg);
-      if (
-        getOrCreateStreamingInfo(deviceId).ffmpegNumVideoUsersConnected === 0
-      ) {
-        stopFfmpegStreamer(deviceId);
-      }
-      getOrCreateFfmpegFrameEmitter(deviceId).removeListener("data", listener);
+      videoStreamUserDisconnected(deviceId, VideoStreamTypes.ffmpegRawVideo);
+      getOrCreateFfmpegRawVideoFrameEmitter(deviceId).removeListener(
+        "data",
+        listener,
+      );
       clearInterval(pingInterval);
     });
 

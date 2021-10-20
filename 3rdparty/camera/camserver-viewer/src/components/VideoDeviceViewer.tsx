@@ -35,15 +35,15 @@ const VideoDeviceViewer = ({
   }, [onGetConfig]);
 
   const [videoStreamType, setVideoStreamType] = React.useState(
-    VideoStreamTypes.ffmpeg,
+    VideoStreamTypes.ffmpegRawVideo,
   );
   const onToggleVideoStreamType = () => {
     switch (videoStreamType) {
-      case VideoStreamTypes.ffmpeg:
+      case VideoStreamTypes.ffmpegRawVideo:
         setVideoStreamType(VideoStreamTypes.mjpeg);
         break;
       case VideoStreamTypes.mjpeg:
-        setVideoStreamType(VideoStreamTypes.ffmpeg);
+        setVideoStreamType(VideoStreamTypes.ffmpegRawVideo);
         break;
       default:
         break;
@@ -56,7 +56,7 @@ const VideoDeviceViewer = ({
 
   let VideoStreamComponent = null;
   switch (videoStreamType) {
-    case VideoStreamTypes.ffmpeg:
+    case VideoStreamTypes.ffmpegRawVideo:
       VideoStreamComponent = (
         <FfmpegVideoStreamPlayer
           deviceId={deviceId}
@@ -98,9 +98,9 @@ const VideoDeviceViewer = ({
             onClick={onToggleVideoStreamType}
           >
             {`click to use ${
-              videoStreamType === VideoStreamTypes.ffmpeg
+              videoStreamType === VideoStreamTypes.ffmpegRawVideo
                 ? VideoStreamTypes.mjpeg
-                : VideoStreamTypes.ffmpeg
+                : VideoStreamTypes.ffmpegRawVideo
             }`}
           </a>
         ) : null}

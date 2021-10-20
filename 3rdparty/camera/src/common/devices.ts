@@ -2,7 +2,7 @@ import {
   LOCAL_DEVICE_ID_NONE,
   REMOTE_MJPEG_DEVICE_ID_NONE,
   REMOTE_MJPEG_STREAM_PATH,
-  REMOTE_RTSP_STREAM_PATH,
+  REMOTE_RTSP_CLIENT_STREAM_PATH,
   REMOTE_SNAPSHOT_PATH,
   REMOTE_WS_PROXY_DEVICE_ID_NONE,
 } from "./constants";
@@ -38,7 +38,7 @@ export const remoteDeviceIdToMjpegStreamUrl = (d: RemoteMjpegDeviceUrl) =>
   `${d}${REMOTE_MJPEG_STREAM_PATH}`;
 
 export const remoteMjpegDeviceIdToRtspStreamUrl = (d: RemoteMjpegDeviceUrl) =>
-  `${d.replace("http", "rtsp")}${REMOTE_RTSP_STREAM_PATH}`;
+  `${d.replace("http", "rtsp")}${REMOTE_RTSP_CLIENT_STREAM_PATH}`;
 
 export const remoteMjpegDeviceToJpegSnapshotUrl = (d: RemoteMjpegDeviceUrl) =>
   `${d}${REMOTE_SNAPSHOT_PATH}`;

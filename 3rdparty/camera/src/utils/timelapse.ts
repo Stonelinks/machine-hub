@@ -18,16 +18,13 @@ import {
   now,
 } from "../common/time";
 import { slugifyDeviceId } from "../common/types";
-import {
-  getLastUserDisconnectedMs,
-  isStreamingVideo,
-} from "../routes/streaming";
 import { deleteFile } from "../utils/files";
 import { cachedDownsize } from "../utils/images";
 import { getConfig, setConfigValue } from "./config";
 import { getFfmpeg } from "./ffmpeg";
 import { getChronologicalFileList, writeFileAsync } from "./files";
 import { fileIsGifOrMovie, fileIsImage } from "./images";
+import { isStreamingVideo, getLastUserDisconnectedMs } from "./streaming";
 import { stop, takeSnapshot } from "./videoDevices";
 
 export const getCaptureDir = async () => {

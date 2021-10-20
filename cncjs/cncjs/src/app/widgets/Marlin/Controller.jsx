@@ -16,7 +16,7 @@ const Controller = (props) => {
         <Modal disableOverlay size="lg" onClose={actions.closeModal}>
             <Modal.Header>
                 <Modal.Title>
-                    Marlin
+                    Grbl
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body>

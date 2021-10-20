@@ -14,7 +14,7 @@ export const WS_BASE_URL = process.env.PUBLIC_URL
       process.env.PUBLIC_URL
     }`
   : `ws${isHttps ? "s" : ""}://${window.location.hostname}:${SERVER_PORT}`;
-console.log("HTTP_BASE_URL", HTTP_BASE_URL);
+console.log("WS_BASE_URL", WS_BASE_URL);
 
 export const apiFetch = async (url: string): Promise<any> => {
   const res = await window.fetch(`${HTTP_BASE_URL}/${url}`);
@@ -36,18 +36,4 @@ export const fillInUrlTemplate = (urlTemplate: string, urlOptions?: object) => {
     }
   }
   return finalUrl;
-};
-
-// Keep the app up-to-date
-export const initUpdateCheckInterval = async () => {
-  setInterval(async () => {
-    try {
-      const r = await apiFetch("update-apps");
-      if (r.shouldRestart) {
-        reload();
-      }
-    } catch (e) {
-      // pass
-    }
-  }, 5 * MILLISECONDS_IN_SECOND);
 };

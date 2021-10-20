@@ -254,7 +254,7 @@ export const autoSelectFormat = (cam: Cam) => {
   let largestFormat: Format = mjpegFormats[0];
 
   mjpegFormats.forEach((f: Format, i: number) => {
-    console.log(`autoSelectFormat: format ${i}`, f);
+    // console.log(`autoSelectFormat: format ${i}`, f);
     const { width, height } = f;
     const thisFps = getFps(f);
     // const fastestFps = getFps(largestFormat as Format);

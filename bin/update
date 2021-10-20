@@ -39,11 +39,11 @@ function github_update() {
     fi
 }
 
-github_update Stonelinks camera 14168ca658fbf6ea7672f64d1e0df041b5591150
+github_update Stonelinks camera dc9a892cb5c3f7d61c1d8817b9ceb272af91ed22
 github_update balena-io-playground balena-cncjs 3ef8d4770fbc558ce3eee4bad3636b249e98f78c
 # github_update MatthewCroughan octobalena 13b5675668317ce758e67dde7b7a2ec01d7cd07d
 
 # some extra steps for the cncjs container to build
-github_update cncjs cncjs b67eb6dd992770c03e236977030bc475dd2823c8
+github_update cncjs cncjs 4a91487830a84c857dfddf8c096b92c920f5cf65
 rm -rf $PROJECT_ROOT/cncjs/cncjs
 mv $THIRD_PARTY_DIR/cncjs $PROJECT_ROOT/cncjs/cncjs
