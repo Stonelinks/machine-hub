@@ -1,0 +1,8 @@
+#!/bin/bash
+set -ex
+
+cd $PROJECT_ROOT
+git add .
+git commit --amend --no-edit
+
+deploy

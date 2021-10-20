@@ -6,4 +6,5 @@ update
 git add .
 git commit -m "auto-update dependencies"
 git push origin
-git push balena
+
+deploy

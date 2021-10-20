@@ -41,7 +41,6 @@ function github_update() {
 
 github_update Stonelinks camera 14168ca658fbf6ea7672f64d1e0df041b5591150
 github_update balena-io-playground balena-cncjs 3ef8d4770fbc558ce3eee4bad3636b249e98f78c
-github_update balena-io balena-mdns-publisher 227d8c4609424a4dbd223e3def1f390b2ce56b2c
 # github_update MatthewCroughan octobalena 13b5675668317ce758e67dde7b7a2ec01d7cd07d
 
 
