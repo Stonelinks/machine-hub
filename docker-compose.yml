@@ -80,7 +80,7 @@ services:
   #     - 80
 
   mdns:
-    build: ./3rdparty/balena-mdns-publisher
+    build: ./3rdparty/balena-cncjs/mdns
     network_mode: host
     depends_on:
       - haproxy
