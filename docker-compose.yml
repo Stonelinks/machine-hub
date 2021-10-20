@@ -55,8 +55,21 @@ services:
     ports:
       - 4000
 
-  haproxy:
-    build: ./haproxy
+  # haproxy:
+  #   build: ./haproxy
+  #   privileged: true
+  #   network_mode: host
+  #   depends_on:
+  #     - camserver
+  #     - cncjs
+  #     - frontend
+  #   expose:
+  #     - 80
+  #   ports:
+  #     - 80
+
+  nginx:
+    build: ./nginx
     privileged: true
     network_mode: host
     depends_on:
@@ -68,22 +81,11 @@ services:
     ports:
       - 80
 
-  # nginx:
-  #   build: ./nginx
-  #   privileged: true
-  #   network_mode: host
-  #   depends_on:
-  #     - camserver
-  #     - cncjs
-  #     - frontend
-  #   expose:
-  #     - 80
-
   mdns:
     build: ./3rdparty/balena-cncjs/mdns
     network_mode: host
     depends_on:
-      - haproxy
+      - nginx
     cap_add:
       - SYS_RESOURCE
       - SYS_ADMIN
