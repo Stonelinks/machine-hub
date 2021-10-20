@@ -18,7 +18,7 @@ export default {
     assets: {
         app: {
             routes: [ // with trailing slash
-                urljoin('/cncjs/', '/'),
+                urljoin(publicPath, '/'),
                 '/' // fallback
             ],
             path: path.resolve(__dirname, '..', '..', 'app'),
@@ -29,7 +29,7 @@ export default {
         enable: false, // disable backend service in production
         host: 'localhost',
         port: 80,
-        route: 'cncjs/api/'
+        route: 'api/'
     },
     cluster: {
         // note. node-inspector cannot debug child (forked) process
