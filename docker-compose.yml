@@ -21,7 +21,7 @@ services:
     labels:
       io.balena.features.supervisor-api: 1
     environment:
-      SET_HOSTNAME: machine-hub
+      SET_HOSTNAME: rpi3-machine-hub.local
 
   cncjs:
     build: ./cncjs
