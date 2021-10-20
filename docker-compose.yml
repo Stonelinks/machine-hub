@@ -14,15 +14,14 @@ services:
     ports:
       - 8081
 
-  # disabled for now since it seems to be breaking a DNS lookup that happens in cncjs
-  # # https://github.com/balenablocks/hostname
-  # hostname:
-  #   image: balenablocks/hostname
-  #   restart: no
-  #   labels:
-  #     io.balena.features.supervisor-api: 1
-  #   environment:
-  #     SET_HOSTNAME: machine-hub
+  # https://github.com/balenablocks/hostname
+  hostname:
+    image: balenablocks/hostname
+    restart: no
+    labels:
+      io.balena.features.supervisor-api: 1
+    environment:
+      SET_HOSTNAME: machine-hub
 
   cncjs:
     build: ./cncjs
@@ -79,3 +78,22 @@ services:
   #     - frontend
   #   expose:
   #     - 80
+
+  mdns:
+    build: ./3rdparty/balena-mdns-publisher
+    network_mode: host
+    depends_on:
+      - haproxy
+    cap_add:
+      - SYS_RESOURCE
+      - SYS_ADMIN
+    security_opt:
+      - "apparmor:unconfined"
+    tmpfs:
+      - /run
+      - /sys/fs/cgroup
+    labels:
+      io.balena.features.dbus: "1"
+      io.balena.features.supervisor-api: "1"
+    environment:
+      MDNS_TLD: local
