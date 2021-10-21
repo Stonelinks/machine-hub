@@ -46,9 +46,9 @@ services:
     volumes:
       - timelapse-config:/capture
     environment:
-      - SERVER_PORT=4000
-      - BASE_PATH=/capture
-      - PUBLIC_URL=/camserver
+      SERVER_PORT: 4000
+      BASE_PATH: /capture
+      PUBLIC_URL: /camserver
     expose:
       - 4000
     ports:
