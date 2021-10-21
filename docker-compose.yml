@@ -3,6 +3,7 @@ version: 2.1
 volumes:
   cnc-config:
   timelapse-config:
+  octoprint-data:
 
 services:
   frontend:
@@ -66,3 +67,17 @@ services:
       - 80
     ports:
       - 80
+
+  octoprint:
+    build: ./octoprint
+    privileged: true
+    network_mode: host
+    volumes:
+      - 'octoprint-data:/data'
+    expose:
+      - 5555
+    ports:
+      - 5555
+    labels:
+      io.balena.features.supervisor-api: '1'
+      io.balena.features.balena-api: '1'
