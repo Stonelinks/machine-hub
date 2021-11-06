@@ -11,5 +11,5 @@ plugins:
     showOnPrinterDisplay: true
 serial:                                                                                                                                 
   autoconnect: false                                                                                                                     
-  baudrate: 0                                                                                                                           
-  port: AUTO
+  baudrate: 115200                                                                                                                           
+  port: /dev/ttyACM0

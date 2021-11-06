@@ -29,7 +29,6 @@ services:
     privileged: true
     network_mode: host
     devices:
-      - /dev/ttyAMA0:/dev/ttyAMA0
       - /dev/ttyUSB0:/dev/ttyUSB0
     cap_add:
       - SYS_RAWIO
@@ -74,6 +73,10 @@ services:
     network_mode: host
     volumes:
       - 'octoprint-data:/data'
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    cap_add:
+      - SYS_RAWIO
     expose:
       - 5555
     ports:
