@@ -39,8 +39,6 @@ function github_update() {
     fi
 }
 
-github_update Stonelinks camera 63006184c1887a9e18ddcaa4308954b97b58815d
-
 # some extra steps for the cncjs container to build
 github_update cncjs cncjs 4a91487830a84c857dfddf8c096b92c920f5cf65
 rm -rf $PROJECT_ROOT/cncjs/cncjs

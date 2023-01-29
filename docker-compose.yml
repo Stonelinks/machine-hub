@@ -39,27 +39,11 @@ services:
     volumes:
       - cnc-config:/config
 
-  camserver:
-    build: ./3rdparty/camera
-    privileged: true
-    network_mode: host
-    volumes:
-      - timelapse-config:/capture
-    environment:
-      SERVER_PORT: 4000
-      BASE_PATH: /capture
-      PUBLIC_URL: /camserver
-    expose:
-      - 4000
-    ports:
-      - 4000
-
   haproxy:
     build: ./haproxy
     privileged: true
     network_mode: host
     depends_on:
-      - camserver
       - cncjs
       - frontend
     expose:
